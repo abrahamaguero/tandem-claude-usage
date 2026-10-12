@@ -1,0 +1,30 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+// What the page may ask of the app. The three that listen return nothing: the page gets
+// no handle on the channel itself.
+contextBridge.exposeInMainWorld('api', {
+  onState: (cb) => { ipcRenderer.on('state', (_e, state) => cb(state)); },
+  ready: () => ipcRenderer.send('ready'),
+  generatePrompts: (ids) => ipcRenderer.invoke('generate-prompts', ids),
+  copyPrompts: (ids) => ipcRenderer.invoke('copy-prompts', ids),
+  listSessions: () => ipcRenderer.invoke('list-sessions'),
+  setupGraphify: (id) => ipcRenderer.invoke('graphify-setup', id),
+  turnOffGraphify: (id) => ipcRenderer.invoke('graphify-off', id),
+  copyGraphify: () => ipcRenderer.invoke('graphify-copy'),
+  onPlaySound: (cb) => { ipcRenderer.on('play-sound', () => cb()); },
+  onPickSession: (cb) => { ipcRenderer.on('pick-session', () => cb()); },
+  refresh: () => ipcRenderer.send('refresh'),
+  hide: () => ipcRenderer.send('hide'),
+  resize: (height) => ipcRenderer.send('resize', height),
+  glass: (height) => ipcRenderer.send('glass', height),
+  trayImages: (images) => ipcRenderer.send('tray-images', images),
+  setActive: (key) => ipcRenderer.send('set-active', key),
+  setSetting: (name, value) => ipcRenderer.send('set-setting', name, value),
+  addProfile: (label) => ipcRenderer.send('add-profile', label),
+  login: (profileId) => ipcRenderer.send('login', profileId),
+  removeProfile: (profileId) => ipcRenderer.send('remove-profile', profileId),
+  removeOrg: (profileId, uuid) => ipcRenderer.send('remove-org', profileId, uuid),
+  setOrgColor: (profileId, uuid, color) => ipcRenderer.send('set-org-color', profileId, uuid, color),
+  renameOrg: (profileId, uuid, alias) => ipcRenderer.send('rename-org', profileId, uuid, alias),
+  toggleOrg: (profileId, uuid, enabled) => ipcRenderer.send('toggle-org', profileId, uuid, enabled),
+});

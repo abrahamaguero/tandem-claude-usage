@@ -1,0 +1,33 @@
+{
+  "name": "tandem",
+  "productName": "Tandem",
+  "version": "0.4.0",
+  "description": "Tandem — usage tracker for Claude. Follows several accounts and switches to the one in use.",
+  "author": "Abraham Agüero",
+  "license": "MIT",
+  "homepage": "https://github.com/abrahamaguero/tandem-claude-usage",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abrahamaguero/tandem-claude-usage.git"
+  },
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.klugeinteractive.tandem",
+    "files": [
+      "src/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3"
+  }
+}

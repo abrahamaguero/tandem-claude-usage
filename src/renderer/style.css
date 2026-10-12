@@ -1,0 +1,525 @@
+/* A bento look: everything is a tile, a rounded block on a dark canvas. Neutral tiles hold
+   the detail; a few solid ones (the account's color, the accent) carry the big things.
+   Each theme sets the canvas, the tiles, an accent and a second color that pops. */
+:root {
+  --bg: #0d0d10;
+  --panel: #1a1a20;
+  --raise: #26262e;
+  --line: #34343e;
+  --text: #f6f6f8;
+  --muted: #9a9aa8;
+  --accent: #c8f431;
+  --on-accent: #14170a;
+  --pop: #6d4dff;
+  --on-pop: #ffffff;
+  /* How far along a limit is: plenty left, in use, the warning, the critical one. */
+  --low: #3ddc84;
+  --ok: #3ea6ff;
+  --warn: #ffab1a;
+  --crit: #ff4d4d;
+  --ink: #111318; /* text on an account's color: they are all bright */
+  --glass: 0; /* how see-through the panel is: 0 with the glass off, up to 1 */
+  --r: 18px;
+  --r-s: 12px;
+  --gap: 8px;
+  --font: "Outfit", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --display: "Outfit", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Outfit, a geometric typeface, ships with the app (fonts/Outfit-OFL.txt is its license).
+   One file holds every weight. Symbols it lacks (arrows, ⚙, ✓) fall back to Segoe UI. */
+@font-face {
+  font-family: "Outfit";
+  src: url("fonts/Outfit.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+:root[data-theme="aurora"] {
+  --bg: #070b16; --panel: #101a2e; --raise: #1a2742; --line: #263556; --text: #e9eefb; --muted: #8b9bb8;
+  --accent: #5eead4; --on-accent: #05231f; --pop: #7c5cff; --on-pop: #ffffff;
+  --low: #4ade80; --ok: #38bdf8; --warn: #fbbf24; --crit: #fb7185;
+}
+:root[data-theme="velvet"] {
+  --bg: #150c3d; --panel: #22166a; --raise: #32238c; --line: #4433a6; --text: #f4f0ff; --muted: #b3a8e6;
+  --accent: #ebe4ff; --on-accent: #24146b; --pop: #ff7ad9; --on-pop: #2a0b22;
+  --low: #7ff0a8; --ok: #8fd0ff; --warn: #ffd166; --crit: #ff6b8b;
+}
+:root[data-theme="ember"] {
+  --bg: #131110; --panel: #201c19; --raise: #2e2823; --line: #3e362f; --text: #f8f0e7; --muted: #a8998b;
+  --accent: #ff7a1a; --on-accent: #1c0e03; --pop: #ffd43b; --on-pop: #1c1600;
+  --low: #8fce7e; --ok: #6fb3e6; --warn: #f5b942; --crit: #ef4444;
+}
+:root[data-theme="porcelain"] {
+  --bg: #e9e4db; --panel: #fbf8f3; --raise: #efe9df; --line: #d9d2c6; --text: #17161a; --muted: #6f6a63;
+  --accent: #17161a; --on-accent: #ffffff; --pop: #ff5a36; --on-pop: #ffffff;
+  --low: #2f9e5b; --ok: #2b84c9; --warn: #e08a00; --crit: #d62839;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--text);
+  font: 13px/1.4 var(--font);
+  word-spacing: 0.06em;
+  user-select: none;
+  overflow: hidden;
+}
+button, input, select { font: inherit; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { border-radius: 3px; background: var(--line); }
+
+/* The window is see-through and does not change size with what it shows. #app is the frame the panel lives in,
+   standing on the window's bottom edge; #sheet is the panel itself, which slides inside
+   the frame when its size changes (fit() in app.js); #content is what it holds. */
+#app { position: fixed; left: 0; right: 0; bottom: 0; overflow: hidden; border-radius: 22px; }
+#sheet { position: relative; border-radius: 22px; background: var(--bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
+
+/* Glass. Behind the panel there is then a window of blurred glass (see main.js); here the
+   panel and what it holds turn see-through by as much as --glass says, so it shows. The
+   glass stops 7px short of the panel's edge, which is why the edge keeps a solid rim.
+   The big colored tiles stay solid: they are what stands out on it. */
+.glass #sheet { background: color-mix(in srgb, var(--bg) calc(96% - var(--glass) * 76%), transparent); box-shadow: inset 0 0 0 7px color-mix(in srgb, var(--bg) 82%, transparent), inset 0 0 0 8px color-mix(in srgb, var(--text) 10%, transparent); }
+.glass .tile, .glass .account.closed, .glass header button, .glass .guide-bubble, .glass .g-promise, .glass .g-steps li, .glass .g-chat, .glass .guide-stage .session { background-color: color-mix(in srgb, var(--panel) calc(94% - var(--glass) * 56%), transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) calc(var(--glass) * 12%), transparent); }
+.glass .session, .glass .profile, .glass .help { background-color: color-mix(in srgb, var(--bg) calc(96% - var(--glass) * 50%), transparent); }
+.glass .hero, .glass .action.chats, .glass .tips-hero, .glass header button.on { background-color: var(--c, var(--accent)); box-shadow: none; }
+.glass .action.chats, .glass .tips-hero, .glass header button.on { background-color: var(--accent); }
+
+/* ---------- header ---------- */
+
+header { display: flex; align-items: center; gap: 6px; padding: 12px 12px 4px 16px; -webkit-app-region: drag; }
+header .title { font: 700 16px/1 var(--display); letter-spacing: -0.2px; }
+header .title .sub { font-weight: 400; }
+header .spacer { flex: 1; }
+header button {
+  -webkit-app-region: no-drag;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+header button:hover { background: var(--raise); color: var(--text); }
+header button.lit { color: var(--accent); }
+header button.lit .g-icon path { fill: color-mix(in srgb, var(--accent) 30%, transparent); }
+header button.on { background: var(--accent); color: var(--on-accent); }
+header button .g-icon { width: 17px; height: 17px; }
+header button.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.badge { padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+header .badge { -webkit-app-region: no-drag; cursor: pointer; }
+.badge.off { background: var(--panel); color: var(--muted); }
+
+main { position: relative; display: flex; flex-direction: column; gap: var(--gap); max-height: var(--max-h); padding: 10px 12px 14px; overflow-y: auto; }
+/* Where an account that has just changed form fades away, over the new one (fadeOut() in app.js). */
+.ghosts { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ghosts > * { position: absolute; margin: 0; }
+main[hidden] { display: none; }
+
+/* ---------- tiles ---------- */
+
+.tile { min-width: 0; padding: 12px 14px; border: 0; border-radius: var(--r); background: var(--panel); color: var(--text); }
+h2 { margin: 0; font: 700 22px/1.15 var(--display); letter-spacing: -0.3px; }
+h3 { margin: 6px 2px 0; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+
+/* The petals that decorate the big tiles, peeking in from a corner. */
+.deco { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.burst { position: absolute; right: -26px; bottom: -34px; width: 110px; height: 110px; fill: currentColor; opacity: 0.1; }
+
+/* ---------- arrivals ---------- */
+
+/* What has just appeared rises into place, one tile after another: a view that was opened,
+   an account that was opened, a panel under it. --elapsed is how long ago it arrived (see
+   arriving() in app.js): drawn again midway, it carries on from there. */
+main.arrive > :not(.account):not(.habits):not(.ghosts), main.arrive > .account.closed, main.arrive > .habits > *,
+.account.arrive:not(.closed) > *, .tile.arrive {
+  animation: tile-in 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc((var(--i, 0) + var(--j, 0)) * 50ms - var(--elapsed, 0ms));
+}
+@keyframes tile-in { from { opacity: 0; transform: translateY(22px) scale(0.97); } }
+/* --i is the place among its siblings; --j, the place inside a grid that is one of them. */
+.arrive > :nth-child(1) { --i: 0; }
+.arrive > :nth-child(2) { --i: 1; }
+.arrive > :nth-child(3) { --i: 2; }
+.arrive > :nth-child(4) { --i: 3; }
+.arrive > :nth-child(5) { --i: 4; }
+.arrive > :nth-child(6) { --i: 5; }
+.arrive > :nth-child(7) { --i: 6; }
+.arrive > :nth-child(n + 8) { --i: 7; }
+.arrive > .habits > :nth-child(2) { --j: 1; }
+.arrive > .habits > :nth-child(3), .arrive > .habits > :nth-child(4) { --j: 2; }
+.arrive > .habits > :nth-child(5), .arrive > .habits > :nth-child(6) { --j: 3; }
+.arrive > .habits > :nth-child(n + 7) { --j: 4; }
+@media (prefers-reduced-motion: reduce) {
+  .arrive, .arrive * { animation: none !important; }
+}
+
+/* ---------- an account ---------- */
+
+.account { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.account > .wide, .account > .hero, .account > .chart, .account > .stats, .account > .sessions, .account > .swatches, .account > .pair { grid-column: 1 / -1; }
+.account + .account { margin-top: 4px; }
+
+/* Its own tile, in its color. */
+.hero { position: relative; display: flex; align-items: center; gap: 12px; min-height: 76px; background: var(--c); color: var(--ink); cursor: pointer; }
+/* Clicking it changes nothing while the account in use is being detected. */
+.hero.still { cursor: default; }
+/* What an account needs before it can show anything: a word and the button for it. */
+.status { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.identity { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.identity-line { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
+.name { font: 700 24px/1.15 var(--display); letter-spacing: -0.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.org { font-size: 11.5px; opacity: 0.72; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The pencil that renames the account: it shows on pointing at the name, big enough to hit. */
+.rename { padding: 0 6px; border: 0; background: transparent; color: inherit; font-size: 20px; line-height: 1; cursor: pointer; opacity: 0; transform: scaleX(-1); /* the pencil points the other way */ }
+.closed .rename { font-size: 16px; }
+.name:hover + .rename, .rename:hover, .rename:focus-visible { opacity: 1; }
+.name-edit { width: 190px; padding: 0 10px; border: 2px solid currentColor; border-radius: var(--r-s); background: transparent; color: inherit; font: 800 22px/1.3 var(--display); }
+.now { position: relative; flex: none; padding: 4px 10px; border-radius: 999px; background: var(--ink); color: var(--c); font-size: 10px; font-weight: 800; letter-spacing: 0.4px; white-space: nowrap; }
+
+.rings-box { position: relative; flex: none; display: grid; place-items: center; }
+.rings { display: block; width: 46px; height: 46px; }
+.ring-track { fill: none; stroke: color-mix(in srgb, var(--ink) 16%, transparent); stroke-width: 5; }
+.ring-arc { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; }
+.ring-dot { fill: var(--ink); }
+
+/* An account that is not on show: one tile, with its two numbers. */
+.account.closed { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 9px 12px 9px 9px; border-radius: var(--r); background: var(--panel); cursor: pointer; }
+.account.closed:hover { background: var(--raise); }
+.closed .rings-box { width: 46px; height: 46px; border-radius: 14px; background: var(--c); }
+.closed .rings { width: 34px; height: 34px; }
+.closed .name { font-size: 17px; letter-spacing: -0.3px; }
+.closed .org { color: var(--muted); opacity: 1; }
+.closed .now { background: var(--c); color: var(--ink); }
+.closed .swatches { flex-basis: 100%; }
+
+.chips { display: flex; gap: 6px; }
+.chip { --s: var(--ok); min-width: 30px; padding: 2px 10px; border: 2px solid var(--s); border-radius: 999px; color: var(--s); font: 800 13px/1.4 var(--display); text-align: center; }
+.chip small { margin-right: 4px; font-size: 9px; font-weight: 700; opacity: 0.75; }
+.chip.low { --s: var(--low); }
+.chip.warn { --s: var(--warn); }
+.chip.crit { --s: var(--crit); }
+.chip.solid { background: var(--s); color: var(--ink); }
+
+.swatches { display: flex; gap: 7px; padding: 4px 2px; }
+.swatch { width: 22px; height: 22px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: var(--c); cursor: pointer; outline: 1px solid var(--line); }
+.swatch.current, .swatch:hover { border-color: var(--bg); outline: 2px solid var(--text); }
+
+/* One limit: a small label, a big number. */
+.metric { display: flex; flex-direction: column; }
+.metric-label { color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.metric-value { margin: 1px 0 8px; font: 700 42px/1 var(--display); letter-spacing: -0.5px; }
+.metric-value small { margin-left: 2px; color: var(--muted); font-size: 18px; font-weight: 700; letter-spacing: 0; }
+.metric-value.long { font-size: 19px; line-height: 1.3; letter-spacing: -0.4px; }
+.metric.warn .metric-value { color: var(--warn); }
+.metric.crit .metric-value { color: var(--crit); }
+.metric-reset { margin-top: 8px; color: var(--muted); font-size: 11px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+
+.bar { height: 8px; border-radius: 4px; background: var(--raise); overflow: hidden; }
+.bar > div { height: 100%; border-radius: 4px; background: var(--ok); }
+.bar.low > div { background: var(--low); }
+.bar.warn > div { background: var(--warn); }
+.bar.crit > div { background: var(--crit); }
+
+.pace { margin-top: 2px; color: var(--warn); font-size: 11px; }
+.pace.calm { color: var(--muted); }
+.reset { color: var(--muted); font-size: 11px; }
+.metric-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+
+.chart { color: var(--muted); font-size: 10.5px; }
+.chart-row { display: flex; justify-content: space-between; }
+.chart-plot { position: relative; height: 48px; margin: 4px 0; border-top: 1px dashed var(--line); border-bottom: 1px solid var(--line); }
+.chart-plot svg { display: block; width: 100%; height: 100%; }
+.chart-plot polygon { fill: var(--c); opacity: 0.22; }
+.chart-plot polyline { fill: none; stroke: var(--c); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.chart-dot { position: absolute; right: -3px; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--c); }
+
+/* The two tiles that open something: the chats, on the accent, and the activity. */
+.action { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; text-align: left; cursor: pointer; }
+.action small { display: block; color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.action strong { display: block; font: 700 28px/1.1 var(--display); letter-spacing: -0.3px; }
+.go { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 11px; background: var(--raise); font-size: 15px; font-style: normal; }
+.action:hover .go, .action.open .go { background: var(--accent); color: var(--on-accent); }
+.action.chats { background: var(--accent); color: var(--on-accent); }
+.action.chats small { color: inherit; opacity: 0.7; }
+.action.chats .go, .action.chats:hover .go { background: var(--on-accent); color: var(--accent); }
+
+/* ---------- panels: activity and chats ---------- */
+
+.stats { display: flex; flex-direction: column; gap: 6px; }
+.note { color: var(--muted); font-size: 12px; }
+.note.small { font-size: 10.5px; }
+.note.error { color: var(--crit); }
+.note.ok { color: var(--accent); }
+.insights-head { display: flex; justify-content: space-between; align-items: baseline; }
+.share .bar { height: 6px; margin-top: 3px; }
+.share .bar > div { background: var(--pop); }
+.share-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.switch-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
+.switch-name { flex: 1; }
+
+.sessions { display: flex; flex-direction: column; gap: 6px; padding: 10px; }
+.handoff-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.help-toggle { margin-left: auto; width: 30px; padding: 6px 0; font-weight: 800; }
+.help-toggle.on { background: var(--accent); color: var(--on-accent); }
+.help { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 14px; background: var(--raise); color: var(--muted); font-size: 12px; }
+.help strong { color: var(--text); }
+.help ol { margin: 0; padding-left: 18px; color: var(--text); }
+.help li { margin: 2px 0; }
+.session { display: flex; flex-direction: column; gap: 6px; padding: 9px 11px; border-radius: 14px; background: var(--bg); }
+.session-main { display: flex; align-items: center; gap: 6px; }
+/* A chat folded to one line: its name and how big it is. Pressing it unfolds the rest. */
+.session.folded { flex-direction: row; align-items: center; gap: 10px; padding: 8px 11px; color: var(--muted); font-size: 11px; cursor: pointer; }
+.session.folded:hover { background: color-mix(in srgb, var(--raise) 50%, var(--bg)); }
+.folded .session-name { flex: 1; min-width: 0; color: var(--text); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folded .bar { flex: none; width: 96px; }
+.folded .ctx-value { flex: none; min-width: 34px; text-align: right; }
+.fold { flex: none; padding: 4px 2px 4px 4px; color: var(--muted); font-size: 10px; font-style: normal; cursor: pointer; }
+.session.arrive > .session-context { animation: g-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(60ms - var(--elapsed, 0ms)); }
+.session-info { flex: 1; min-width: 0; display: flex; flex-direction: column; cursor: pointer; }
+.session-info span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-name { font-weight: 700; }
+.session-about, .session-time { color: var(--muted); font-size: 11px; }
+.session-time.stale { color: var(--warn); }
+.session button { padding: 4px 12px; font-size: 12px; }
+/* The chat's context, set apart from its name and prompt: one labelled line each. */
+.session-context { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line); }
+.ctx-line { display: flex; align-items: center; gap: 8px; min-height: 22px; color: var(--muted); font-size: 11px; }
+.ctx-label { flex: none; width: 54px; }
+.ctx-line .bar, .folded .bar { position: relative; height: 6px; }
+.ctx-line .bar { flex: 1; }
+.ctx-line .bar i, .folded .bar i { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--text); }
+.ctx-value.warn { color: var(--warn); }
+.ctx-value.crit { color: var(--crit); }
+.ctx-state { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-state.on { color: var(--ok); font-weight: 700; }
+.ctx-state.warn { color: var(--warn); }
+.ctx-state.crit { color: var(--crit); }
+.session .ctx-line button { padding: 2px 10px; font-size: 11px; }
+/* Unfolds the lines that only explain the chat. Kept quiet: it is not an action on the chat. */
+.session .more { align-self: flex-end; padding: 0 6px; background: transparent; color: var(--muted); font-size: 10px; }
+.session .more:hover { background: transparent; color: var(--text); }
+
+.empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 16px; color: var(--muted); text-align: center; }
+.empty p { margin: 0; }
+.empty .g-tandem { width: 120px; }
+
+/* ---------- controls ---------- */
+
+button.primary, button.ghost, button.danger { padding: 6px 14px; border: 0; border-radius: 999px; background: var(--raise); color: var(--text); font-weight: 600; cursor: pointer; }
+button.primary { background: var(--accent); color: var(--on-accent); }
+button.primary:hover { filter: brightness(1.1); }
+button.ghost:hover { background: var(--line); }
+button.danger { background: transparent; color: var(--crit); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+.group { display: flex; flex-direction: column; gap: 6px; }
+.group h3 { margin: 0 0 2px; }
+.row { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.row label { flex: 1; }
+.row input[type="number"] { width: 64px; }
+.row input[type="text"] { flex: 1; min-width: 0; }
+input[type="text"], input[type="number"], select { padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--text); }
+input[type="range"] { width: 150px; accent-color: var(--accent); }
+/* A select: its own arrow is hidden, and one is drawn in a small circle at its end. */
+.picker { position: relative; display: inline-flex; min-width: 0; }
+.picker select { min-width: 0; padding-right: 40px; appearance: none; cursor: pointer; }
+.picker::before { content: ''; position: absolute; right: 6px; top: 50%; width: 22px; height: 22px; margin-top: -11px; border-radius: 50%; background: var(--raise); pointer-events: none; }
+.picker::after { content: ''; position: absolute; right: 13.5px; top: 50%; width: 7px; height: 7px; margin-top: -5.5px; border-right: 2px solid var(--text); border-bottom: 2px solid var(--text); border-radius: 1px; transform: rotate(45deg); box-sizing: border-box; pointer-events: none; }
+input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+
+.profile { padding: 9px 11px; border-radius: 14px; background: var(--bg); }
+.profile .name { flex: 1; font: 700 14px/1.3 var(--font); letter-spacing: 0; }
+.profile .org-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; color: var(--muted); font-size: 12px; }
+.profile .org-row input[type="text"] { width: 110px; border-color: var(--c); color: var(--c); font-weight: 700; }
+.profile .org-row input[type="checkbox"] { accent-color: var(--c); }
+.profile .org-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile .org-row .swatch { flex: none; }
+.profile .swatches { margin: 8px 0 4px 22px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--crit); }
+.dot.ok { background: #22c55e; }
+
+footer { padding-top: 2px; color: var(--muted); font-size: 11px; text-align: center; }
+
+/* ---------- tips ---------- */
+
+.tips-hero { position: relative; display: flex; align-items: center; gap: 12px; min-height: 92px; background: var(--accent); color: var(--on-accent); }
+.tips-hero > div { position: relative; flex: 1; }
+.tips-hero p { margin: 4px 0 0; font-size: 12px; opacity: 0.75; }
+.tips-hero .g-icon { position: relative; flex: none; width: 54px; height: 54px; }
+.now-tip { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border-left: 5px solid var(--pop); }
+.now-tip.warn { border-left-color: var(--warn); }
+.now-tip.crit { border-left-color: var(--crit); }
+.now-tip strong { font-size: 13.5px; }
+.now-tip span { color: var(--muted); font-size: 12px; }
+.now-tip button { margin-top: 6px; padding: 4px 12px; font-size: 12px; }
+.habits { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.habit { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; cursor: pointer; }
+.habit:hover { background: var(--raise); }
+.habit.open { grid-column: 1 / -1; background: var(--raise); }
+.habit strong { font: 700 14.5px/1.2 var(--display); letter-spacing: -0.2px; }
+.habit-pic { display: grid; place-items: center; width: 38px; height: 38px; border-radius: var(--r-s); background: color-mix(in srgb, var(--pop) 26%, transparent); color: var(--text); }
+.habit.open .habit-pic { background: var(--pop); color: var(--on-pop); }
+.habit-pic .g-icon { width: 22px; height: 22px; }
+.habit-why { color: var(--muted); font-size: 12px; }
+.habit-how { font-size: 12px; }
+.habit-how b { color: var(--accent); }
+
+/* ---------- the guide ---------- */
+
+/* A tour. Each page has a working copy of a part of the app (the stage); an arrow points
+   at one piece of it, and Tandem says in the bubble below what it is for. */
+#view-guide { gap: 12px; padding: 12px 16px 16px; }
+.guide-head h2 { margin: 2px 0 4px; }
+.guide-intro { color: var(--muted); font-size: 12.5px; }
+.guide-head.enter, .guide-stage.enter { animation: g-fade 0.35s ease-out; }
+/* The stage is a little bigger than what it holds, so the light around a piece at its edge fits in. */
+.guide-stage { display: flex; flex-direction: column; gap: var(--gap); margin: -8px; padding: 8px; overflow: hidden; border-radius: 22px; }
+.guide-stage .hero, .guide-stage .account.closed { cursor: default; }
+.guide-stage [data-g] { cursor: pointer; }
+.guide-stage div[data-g] { border-radius: var(--r); }
+.guide-stage .ctx-line[data-g] { border-radius: 6px; }
+.guide-stage .chips[data-g] { border-radius: 999px; }
+.guide-stage [data-g]:hover { outline: 1px dashed color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
+/* The piece the arrow points at: ringed, and with the rest of the stage dimmed by its shadow. */
+.guide-stage .g-on, .guide-stage .g-on:hover { position: relative; z-index: 1; outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 999px color-mix(in srgb, var(--bg) 62%, transparent); animation: g-pulse 1.3s ease-in-out infinite; }
+header button.g-on { outline: 2px solid var(--accent); color: var(--accent); animation: g-glow 1.3s ease-in-out infinite; }
+@keyframes g-pulse { 50% { outline-offset: 5px; } }
+@keyframes g-glow { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 28%, transparent); } }
+@keyframes g-fade { from { opacity: 0; } }
+@keyframes g-rise { from { opacity: 0; transform: translateY(6px); } }
+
+/* The arrow lies over the whole panel, so it can also reach the header. Its dark edge
+   keeps it readable where it crosses the stage. */
+.guide-arrow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; animation: g-nudge 1.3s ease-in-out 0.6s infinite; }
+.guide-arrow path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.guide-arrow .halo { stroke: var(--bg); stroke-width: 7; opacity: 0.85; animation: g-fade 0.3s ease-out; }
+.guide-arrow .line { stroke-dasharray: 1; animation: g-draw 0.35s ease-out backwards; }
+.guide-arrow .head { animation: g-fade 0.15s ease-out 0.3s backwards; }
+@keyframes g-draw { from { stroke-dashoffset: 1; } }
+@keyframes g-nudge { 50% { transform: translateY(-3px); } }
+
+/* Tandem, the bicycle that does the talking. */
+.g-tandem { display: block; overflow: visible; color: var(--text); }
+.g-tandem circle, .g-tandem path { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.g-tandem .g-wheel path { stroke-width: 1; opacity: 0.5; }
+.g-tandem .g-hub { fill: var(--accent); stroke: none; }
+.g-wheel { transform-box: fill-box; transform-origin: center; }
+.g-tandem.ride .g-wheel { animation: spin 0.9s linear infinite; }
+/* Its two riders, each in one of the two colors of the wheels in the logo. The cranks turn
+   at the pace the legs pedal (PEDAL in app.js). */
+.g-tandem .r0 { --rider: #d4ff00; }
+.g-tandem .r1 { --rider: #e91e8c; }
+.g-tandem .g-leg, .g-tandem .g-torso, .g-tandem .g-arm { stroke: var(--rider); }
+.g-tandem .g-leg { stroke-width: 2.4; }
+.g-tandem .g-leg.far { opacity: 0.5; }
+.g-tandem .g-torso { stroke-width: 3.4; }
+.g-tandem .g-arm { stroke-width: 1.9; }
+.g-tandem .g-head { fill: var(--rider); stroke: none; }
+.g-tandem .g-crank { stroke-width: 1.6; transform-box: fill-box; transform-origin: center; animation: spin 1.1s linear infinite; }
+
+.guide-bubble { display: flex; gap: 12px; margin-top: 22px; /* room for the arrow */ padding: 12px 14px; border-radius: var(--r); background: var(--panel); }
+.guide-bubble.calm { margin-top: 2px; }
+/* What the spot is about, as a small picture next to the words. */
+.guide-pic { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--raise); color: var(--accent); animation: g-pop 0.35s cubic-bezier(0.3, 1.5, 0.5, 1); }
+@keyframes g-pop { from { opacity: 0; transform: scale(0.6) rotate(-8deg); } }
+.g-icon { width: 34px; height: 34px; }
+.g-icon path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.g-glyph { font-size: 34px; font-weight: 600; line-height: 1; }
+.g-minibars { display: flex; flex-direction: column; gap: 7px; width: 38px; }
+.g-minibars .bar { height: 6px; background: var(--line); }
+.g-minichips { flex-direction: column; gap: 4px; }
+.g-minichips .chip { min-width: 0; padding: 0 6px; font-size: 10px; line-height: 15px; }
+.g-minichips .chip small { margin-right: 3px; font-size: 8px; }
+.g-minitrays { display: flex; gap: 4px; }
+.g-minitrays img { display: block; width: 22px; height: 22px; }
+.guide-pic .g-now { padding: 2px 6px; font-size: 8.5px; }
+.guide-say { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; animation: g-rise 0.3s ease-out; }
+.guide-say strong { font: 700 15px/1.25 var(--display); letter-spacing: -0.2px; }
+.guide-say > span { color: var(--muted); font-size: 12.5px; }
+.guide-extra { display: flex; align-items: center; gap: 8px; min-height: 26px; margin-top: 6px; }
+button.guide-try { padding: 4px 13px; font-size: 12px; }
+.guide-pips { display: flex; gap: 4px; margin-left: auto; }
+.guide-pips button { width: 12px; height: 6px; padding: 0; border: 0; border-radius: 3px; background: var(--line); cursor: pointer; }
+.guide-pips button.on { width: 20px; background: var(--accent); }
+
+.guide-nav { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.guide-nav .gone { visibility: hidden; }
+button.guide-skip { background: var(--panel); color: var(--muted); }
+button.guide-back { width: 32px; padding: 6px 0; background: var(--panel); font-size: 16px; line-height: 18px; }
+.guide-dots { flex: 1; display: flex; justify-content: center; }
+.guide-dots button { width: 14px; height: 18px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.guide-dots button::before { content: ''; display: block; width: 6px; height: 6px; margin: auto; border-radius: 50%; background: var(--line); }
+.guide-dots button:hover::before { background: var(--muted); }
+.guide-dots button.on::before { background: var(--accent); transform: scale(1.35); }
+
+/* The first page: Tandem riding along, in the colors of its logo whatever the theme: the
+   teal of the hubs behind, the lime and the pink of the wheels on the riders, and the
+   bicycle in black. */
+.g-hero { position: relative; height: 124px; overflow: hidden; border-radius: var(--r); background: #00a0b0; color: var(--ink); }
+.g-hero .g-tandem { position: absolute; left: 50%; bottom: 9px; width: 132px; margin-left: -66px; color: var(--ink); animation: g-arrive 0.9s cubic-bezier(0.2, 0.8, 0.3, 1), g-bump 0.45s ease-in-out 0.9s infinite alternate; }
+/* On this tile the bicycle is black all over, hubs and spokes too. */
+.g-hero .g-hub { fill: currentColor; }
+.g-hero .g-wheel path { opacity: 1; stroke-width: 0.9; }
+.g-road { position: absolute; left: 0; right: 0; bottom: 9px; height: 2px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--ink) 35%, transparent) 0 16px, transparent 16px 28px); animation: g-road 0.35s linear infinite; }
+@keyframes g-road { to { background-position: -28px 0; } }
+@keyframes g-arrive { from { transform: translateX(-320px); } }
+@keyframes g-bump { to { transform: translateY(-1.5px); } }
+.g-promise, .g-steps li { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: var(--r); background: var(--panel); font-size: 12.5px; animation: g-rise 0.4s ease-out backwards; }
+.g-promise:nth-child(3), .g-steps li:nth-child(2) { animation-delay: 0.12s; }
+.g-promise:nth-child(4), .g-steps li:nth-child(3) { animation-delay: 0.24s; }
+.g-tile { flex: none; display: grid; place-items: center; width: 58px; height: 38px; border-radius: var(--r-s); background: var(--c); }
+.g-tile .rings { width: 30px; height: 30px; }
+.g-now { padding: 2px 8px; border-radius: 999px; background: var(--ink); color: var(--c); font-size: 9px; font-weight: 800; white-space: nowrap; }
+.g-swap { color: var(--ink); font-size: 22px; font-weight: 700; line-height: 1; }
+.g-steps { display: flex; flex-direction: column; gap: var(--gap); margin: 0; padding: 0; list-style: none; counter-reset: g-step; }
+.g-steps li { counter-increment: g-step; }
+.g-steps li::before { content: counter(g-step); flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 800; }
+
+/* A corner of the Windows desktop, for the icons next to the clock and for notifications.
+   The taskbar, the tooltip and the notification keep Windows' own colors whatever the
+   theme; the wallpaper is made of the theme's. */
+.g-desktop { display: flex; flex-direction: column; justify-content: flex-end; min-height: 132px; overflow: hidden; border-radius: var(--r); background: linear-gradient(135deg, color-mix(in srgb, var(--pop) 55%, #14161c), color-mix(in srgb, var(--ok) 40%, #14161c)); }
+.g-taskbar { display: flex; align-items: center; justify-content: flex-end; gap: 6px; height: 46px; padding: 0 14px; background: rgba(18, 18, 18, 0.82); color: #fff; }
+.g-chevron { margin-right: 2px; font-size: 12px; opacity: 0.8; }
+.g-icons { display: flex; gap: 6px; }
+.guide-stage .g-icons { border-radius: 6px; }
+.g-slot { position: relative; display: flex; padding: 3px; }
+.g-slot img { display: block; width: 24px; height: 24px; }
+.g-tip { position: absolute; right: -30px; bottom: calc(100% + 10px); padding: 5px 9px; border: 1px solid #5a5a5a; border-radius: 4px; background: #2b2b2b; color: #fff; font-size: 11px; white-space: pre; opacity: 0; transform: translateY(4px); transition: opacity 0.15s, transform 0.15s; pointer-events: none; }
+.g-slot.tip .g-tip, .g-slot:hover .g-tip { opacity: 1; transform: none; }
+.g-clock { display: flex; flex-direction: column; align-items: flex-end; margin-left: 6px; font-size: 10.5px; line-height: 1.3; }
+.g-toast-slot { align-self: flex-end; width: min(300px, calc(100% - 16px)); margin: 10px 8px 8px; }
+.guide-stage .g-toast-slot { border-radius: 8px; }
+.guide-stage .g-toast-slot.g-on { outline: 0; animation: none; }
+.g-toast { display: flex; gap: 9px; padding: 9px 10px; border: 1px solid #4a4a4a; border-radius: 8px; background: #2b2b2b; color: #fff; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); animation: g-toast 0.4s cubic-bezier(0.2, 0.8, 0.3, 1); }
+.g-toast-icon { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; background: #111; }
+.g-toast-icon .g-tandem { width: 24px; color: #fff; }
+.g-toast strong { display: block; font-size: 12px; }
+.g-toast div > span { color: #c8c8c8; font-size: 11px; }
+@keyframes g-toast { from { opacity: 0; transform: translateX(40px); } }
+
+/* The new chat a handoff prompt is pasted in. */
+.guide-stage .session { background: var(--panel); border-radius: var(--r); padding: 11px 13px; }
+.g-chat { padding: 11px 13px; border: 1px dashed var(--line); border-radius: var(--r); background: var(--panel); }
+.g-chat.pasted { border-style: solid; }
+.g-chat-head { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
+.g-chat-head i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.g-chat-box { margin-top: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; }
+.g-typed { display: inline-block; max-width: 100%; overflow: hidden; color: var(--text); text-overflow: ellipsis; vertical-align: bottom; animation: g-type 0.9s steps(30, end); }
+@keyframes g-type { from { max-width: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-arrow, .guide-arrow path, #view-guide *, header button.g-on { animation: none; }
+}

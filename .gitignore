@@ -1,0 +1,13 @@
+# Dependencies and build output (the installer is published as a GitHub Release, not committed)
+node_modules/
+dist/
+
+# Local working material: old copies of the code, discarded icon drafts
+backup/
+icon-options/
+
+# The author's own tooling and notes: assistant settings, code graph, session handoff
+.claude/
+CLAUDE.md
+graphify-out/
+HANDOFF.md
