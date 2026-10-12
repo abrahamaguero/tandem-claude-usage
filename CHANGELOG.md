@@ -6,6 +6,10 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.6.0] - 2026-10-12
+
 ### Added
 
 - Tandem's own alerts: a small bubble right above its icons in the taskbar, with a drawing of what the
@@ -38,7 +42,8 @@ touch-ups are left out unless they change how something is used. The format foll
 
 First public release.
 
-[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/abrahamaguero/tandem-claude-usage/releases/tag/v0.4.0
