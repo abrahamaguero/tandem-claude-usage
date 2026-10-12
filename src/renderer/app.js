@@ -186,15 +186,13 @@ function until(iso, family) {
 const untilReset = (iso) => until(iso, 'resets');
 const fromNow = (iso) => until(iso, 'in');
 
-// How far along a limit is, as the color it is shown in: 'low' (green) while most of it is
-// left, '' (the theme's blue) from there up to the warning, then 'warn' and 'crit', which
-// are the two thresholds the notifications use. The first step is two thirds of the way
-// to the warning: 50% when the warning is at 75%.
+// How far along a limit is, as the color it is shown in, by quarters: 'low' (green) up to
+// 25%, '' (the theme's blue) up to 50%, 'warn' (orange) up to 75% and 'crit' (red) from
+// there on. The colors are fixed; when the notifications go off is the user's to set.
 function level(pct) {
-  const { warnAt, critAt } = state.settings;
-  if (pct >= critAt) return 'crit';
-  if (pct >= warnAt) return 'warn';
-  return pct >= Math.round(warnAt * 2 / 3) ? '' : 'low';
+  if (pct >= 75) return 'crit';
+  if (pct >= 50) return 'warn';
+  return pct >= 25 ? '' : 'low';
 }
 
 // ---------- usage view ----------

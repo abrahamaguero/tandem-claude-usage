@@ -1,7 +1,7 @@
 {
   "name": "tandem",
   "productName": "Tandem",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Tandem — usage tracker for Claude. Follows several accounts and switches to the one in use.",
   "author": "Abraham Agüero",
   "license": "MIT",
