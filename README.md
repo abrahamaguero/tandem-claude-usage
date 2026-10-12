@@ -55,6 +55,7 @@ Requires Windows 10 or 11 (64-bit). The glass effect needs Windows 11 22H2 or la
 - **Updates.** Tandem tells you when a newer version is out, with a notice in the app and a notification
   that take you to the download. Updating is running the newer installer over the old one; accounts,
   sign-ins and settings are kept. Version 0.4.0 does not check: if you have it, get the latest once by hand.
+  What changed in each version is in the [changelog](CHANGELOG.md).
 - **Feedback.** Ideas and problems are welcome as [issues](../../issues/new/choose). There is a button for
   it at the bottom of Settings.
 
