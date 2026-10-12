@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// What the page may ask of the app. The three that listen return nothing: the page gets
+// What the page may ask of the app. The ones that listen return nothing: the page gets
 // no handle on the channel itself.
 contextBridge.exposeInMainWorld('api', {
   onState: (cb) => { ipcRenderer.on('state', (_e, state) => cb(state)); },
@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('api', {
   copyGraphify: () => ipcRenderer.invoke('graphify-copy'),
   onPlaySound: (cb) => { ipcRenderer.on('play-sound', () => cb()); },
   onPickSession: (cb) => { ipcRenderer.on('pick-session', () => cb()); },
+  onEnter: (cb) => { ipcRenderer.on('enter', () => cb()); },
+  onLeave: (cb) => { ipcRenderer.on('leave', () => cb()); },
+  left: () => ipcRenderer.send('left'),
   refresh: () => ipcRenderer.send('refresh'),
   hide: () => ipcRenderer.send('hide'),
   resize: (height) => ipcRenderer.send('resize', height),

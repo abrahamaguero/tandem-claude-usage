@@ -904,8 +904,9 @@ function createWindow() {
   // says "show" or "hide" after what the window is doing.
   win.on('show', () => {
     win.setSkipTaskbar(config.settings.hideFromTaskbar);
-    placeGlass(panelHeight);
     updateTray(buildState());
+    // The page brings the panel in, and tells the glass when to come in behind it.
+    page.send('enter');
   });
   win.on('hide', () => {
     if (glass && !glass.isDestroyed()) glass.hide();
@@ -914,7 +915,7 @@ function createWindow() {
   win.on('close', (e) => {
     if (quitting) return;
     e.preventDefault();
-    win.hide();
+    hidePanel();
   });
   // The glass is a window of its own and goes wherever the panel goes.
   win.on('move', () => placeGlass(panelHeight));
@@ -1013,9 +1014,31 @@ function placeGlass(height) {
   if (!glass.isVisible()) glass.showInactive();
 }
 
+// Hides the window once the page has emptied the panel. What Windows shows first of a
+// window that comes back is the last thing it showed of it: left as it was, the panel
+// would flash whole for a moment before coming in.
+let leaving = false;
+function hidePanel() {
+  if (!alive() || !win.isVisible() || leaving) return;
+  leaving = true;
+  const done = () => {
+    if (!leaving) return;
+    leaving = false;
+    clearTimeout(timer);
+    ipcMain.removeListener('left', done);
+    if (alive()) win.hide();
+  };
+  // A page that does not answer must not keep the window from hiding.
+  const timer = setTimeout(done, 200);
+  ipcMain.once('left', done);
+  // The glass goes first: alone on screen, it is a blurred box.
+  if (glass && !glass.isDestroyed()) glass.hide();
+  win.webContents.send('leave');
+}
+
 function toggleWindow() {
   if (!alive()) return;
-  if (win.isVisible()) win.hide();
+  if (win.isVisible()) hidePanel();
   else win.show();
 }
 
@@ -1183,7 +1206,7 @@ function registerIpc() {
   ipcMain.handle('graphify-setup', (_e, id) => setupGraphify(id));
   ipcMain.handle('graphify-off', (_e, id) => turnOffGraphify(id));
   ipcMain.handle('graphify-copy', () => clipboard.writeText(graphify.FULL_GRAPH_COMMAND));
-  ipcMain.on('hide', () => alive() && win.hide());
+  ipcMain.on('hide', hidePanel);
   ipcMain.on('set-active', (_e, key) => setActive(key));
   ipcMain.on('set-setting', (_e, name, value) => setSetting(name, value));
   ipcMain.on('glass', (_e, height) => placeGlass(height));

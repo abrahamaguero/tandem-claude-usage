@@ -1776,6 +1776,61 @@ function easeFit(time) {
 }
 
 new ResizeObserver(fit).observe($('content'));
+
+// ---------- coming into view ----------
+
+// Shown again, the panel comes up a little from below as it fades in, fast at first and
+// settling slowly. It is the frame that moves, so a change of size under way goes on
+// inside it. The window cuts the panel off at its bottom edge, so what shows of it on the
+// way up is a shorter panel: that is the height the glass behind it is told.
+const ENTER = { duration: 560, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' };
+const RISE = 28;
+let entering = null;
+
+function enter() {
+  frame.style.opacity = '';
+  if (entering) entering.cancel();
+  entering = null;
+  // Nothing drawn yet: the glass is placed when the panel first gets its size.
+  if (!fitted) return;
+  // Less motion asked for: the panel is just there.
+  if (calm.matches) {
+    if (glassOn()) api.glass(fitted);
+    return;
+  }
+  const rise = frame.animate([{ opacity: 0, transform: `translateY(${RISE}px)` }, { opacity: 1, transform: 'translateY(0)' }], ENTER);
+  entering = rise;
+  const settle = () => {
+    if (entering !== rise) return;
+    entering = null;
+    if (glassOn()) api.glass(Math.round(shownHeight()));
+  };
+  rise.onfinish = settle;
+  rise.oncancel = settle;
+  if (!glassOn()) return;
+  const follow = () => {
+    if (entering !== rise) return;
+    // How far in the panel is, the easing already applied: 0 below and unseen, 1 in place.
+    const at = rise.effect.getComputedTiming().progress ?? 1;
+    // The glass waits until the panel is half there: on its own it is a blurred box.
+    if (at >= 0.5) api.glass(Math.floor(shownHeight() - RISE * (1 - at)));
+    requestAnimationFrame(follow);
+  };
+  requestAnimationFrame(follow);
+}
+
+// About to be hidden: the panel is emptied, and the app told once that has been drawn.
+function leave() {
+  // Let go of first, so that being cut short does not bring the glass back.
+  const rise = entering;
+  entering = null;
+  if (rise) rise.cancel();
+  frame.style.opacity = '0';
+  requestAnimationFrame(() => requestAnimationFrame(() => api.left()));
+}
+
+api.onEnter(enter);
+api.onLeave(leave);
 setInterval(() => {
   if (view !== 'settings') render();
   // Keeps the countdown in the tray tooltips current between refreshes.
