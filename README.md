@@ -8,8 +8,8 @@ chat over to another.
 > from claude.ai the way the website shows it to you, and may stop working if the site changes.
 
 <p align="center">
-  <img src="docs/accounts.png" width="360" alt="An account as a block of tiles: its session and weekly limits, the trend and the other account">
-  <img src="docs/sessions.png" width="360" alt="The chats used in the last day, each with the size of its context">
+  <img src="docs/accounts.png" width="360" align="top" alt="An account as a block of tiles: its session and weekly limits, the trend and the other account">
+  <img src="docs/sessions.png" width="360" align="top" alt="The chats used in the last day, with the size of the context, cost, cache and model of the one that is open">
 </p>
 
 ## What it does
@@ -33,6 +33,13 @@ chat over to another.
 - A guided tour for new users, five themes, and an optional glass effect.
 - In English, Spanish, Brazilian Portuguese, French, German and Japanese. A new install starts in the
   language of your system; you can change it in Settings.
+
+<p align="center">
+  <img src="docs/tray.png" width="360" align="top" alt="The two icons next to the clock, with the session at 42% and the week at 78%">
+  <img src="docs/tips.png" width="360" align="top" alt="The tips view: what to do right now, and eight habits that pay off">
+</p>
+
+The pictures show made-up accounts, chats and figures.
 
 ## Install
 
