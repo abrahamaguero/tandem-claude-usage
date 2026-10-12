@@ -240,7 +240,8 @@ main.arrive > :not(.account):not(.habits):not(.ghosts), main.arrive > .account.c
 .bar.crit > div { background: var(--crit); }
 
 .pace { margin-top: 2px; color: var(--warn); font-size: 11px; }
-.pace.calm { color: var(--muted); }
+/* Quieter than the reset line above it: a step closer to the tile it is written on. */
+.pace.calm { color: color-mix(in srgb, var(--muted) 75%, var(--panel)); }
 .reset { color: var(--muted); font-size: 11px; }
 .metric-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
 
