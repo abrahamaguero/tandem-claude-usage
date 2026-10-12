@@ -36,6 +36,11 @@ chat over to another.
   language of your system; you can change it in Settings.
 
 <p align="center">
+  <img src="docs/alert-limit.png" width="340" align="top" alt="An alert above the taskbar: a limit reached, with the session and weekly limits as bars">
+  <img src="docs/alert-chat.png" width="340" align="top" alt="An alert about a chat that has grown past the size set, with its size as a bar">
+</p>
+
+<p align="center">
   <img src="docs/tray.png" width="360" align="top" alt="The two icons next to the clock, with the session at 42% and the week at 78%">
   <img src="docs/tips.png" width="360" align="top" alt="The tips view: what to do right now, and eight habits that pay off">
 </p>
