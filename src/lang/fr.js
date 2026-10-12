@@ -313,6 +313,10 @@ const LANG_FR = {
   feedbackAsk: 'Une idée, ou un souci\u00a0?',
   feedback: 'Donner mon avis',
   feedbackTip: 'Ouvre la page de Tandem sur GitHub dans ton navigateur',
+  optOwnAlerts: 'Afficher les alertes au-dessus de la barre des tâches',
+  optOwnAlertsTip: 'Désactivé\u00a0: Tandem utilise les notifications de Windows',
+  alertTest: 'C’est ici que Tandem te préviendra.',
+  alertTestTip: 'Afficher une alerte d’essai',
   footer: 'Outil non officiel — sans lien avec Anthropic.',
 };
 

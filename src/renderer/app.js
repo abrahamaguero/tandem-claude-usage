@@ -186,15 +186,6 @@ function until(iso, family) {
 const untilReset = (iso) => until(iso, 'resets');
 const fromNow = (iso) => until(iso, 'in');
 
-// How far along a limit is, as the color it is shown in, by quarters: 'low' (green) up to
-// 25%, '' (the theme's blue) up to 50%, 'warn' (orange) up to 75% and 'crit' (red) from
-// there on. The colors are fixed; when the notifications go off is the user's to set.
-function level(pct) {
-  if (pct >= 75) return 'crit';
-  if (pct >= 50) return 'warn';
-  return pct >= 25 ? '' : 'low';
-}
-
 // ---------- usage view ----------
 
 // Clock time of a moment; includes the weekday when it is not today.
@@ -967,6 +958,10 @@ function renderSettings() {
     group(t('alerts'),
       toggleRow('alerts', t('optAlerts')),
       h('div', { class: 'row' },
+        h('label', { title: t('optOwnAlertsTip') }, t('optOwnAlerts')),
+        h('button', { class: 'ghost', title: t('alertTestTip'), onclick: (e) => { e.target.blur(); api.testAlert(); } }, '▶'),
+        h('input', { type: 'checkbox', checked: !!state.settings.ownAlerts, title: t('optOwnAlertsTip'), onchange: (e) => api.setSetting('ownAlerts', e.target.checked) })),
+      h('div', { class: 'row' },
         h('label', {}, t('optSound')),
         // Picking a sound plays it, so the list doubles as a preview.
         picker(h('select', { onchange: (e) => { playChime(e.target.value); api.setSetting('soundId', e.target.value); } },
@@ -1332,21 +1327,6 @@ function contextStage() {
 
 const finaleStage = () => h('ol', { class: 'g-steps' }, [0, 1, 2].map((n) => h('li', {}, t(`g.finale.step${n}`))));
 
-// Line drawings of what a spot is about, on a 24 × 24 grid.
-const ICONS = {
-  prompt: 'M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 15.5h5',
-  newChat: 'M4 5h16v11h-9l-4 4v-4H4zM12 8v5M9.5 10.5h5',
-  bill: 'M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5zM9 8h6M9 12h6',
-  graph: 'M3.7 7a2.3 2.3 0 1 0 4.6 0a2.3 2.3 0 1 0-4.6 0M15.7 6a2.3 2.3 0 1 0 4.6 0a2.3 2.3 0 1 0-4.6 0M9.4 17a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0-5.2 0M7 9l3.6 5.8M17 8.1l-3.6 6.7M8.3 6.8l7.4-.6',
-  bell: 'M6 17v-6a6 6 0 0 1 12 0v6l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0',
-  bulb: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.3 1.1 2.2h5c0-.9.5-1.7 1.1-2.2A6 6 0 0 0 12 3z',
-  flame: 'M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.2 2-4.2.2 1.6 1 2.4 1.8 2.6C10.5 8.5 11 5.5 12 3z',
-  tidy: 'M4 9h16M4 15h16M9 3l3 3 3-3M9 21l3-3 3 3',
-  gauge: 'M4 17a8 8 0 0 1 16 0M12 17l4-6M3 20h18',
-  plug: 'M9 3v5M15 3v5M7 8h10v4a5 5 0 0 1-10 0zM12 17v4',
-  image: 'M4 5h16v14H4zM4 15l4.5-4.5 4 4 2.5-2.5 5 5M15 9.5v.1',
-  target: 'M4 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 12v.1',
-};
 
 // The small picture next to Tandem's words: what the spot is about. A drawing for an idea;
 // for a control, a small copy of the control itself, showing what the stage shows.

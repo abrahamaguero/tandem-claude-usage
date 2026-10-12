@@ -6,7 +6,11 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- Tandem's own alerts: a small bubble right above its icons in the taskbar, with a drawing of what the
+  alert is about and the limits, or the size of the chat, as bars. Pressing it opens Tandem. The
+  notifications of Windows remain as an option in Settings, where a button shows a sample alert.
 
 ## [0.5.1] - 2026-10-12
 

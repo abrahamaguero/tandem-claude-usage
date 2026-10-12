@@ -37,6 +37,7 @@ const DEFAULT_SETTINGS = {
   glass: false,
   glassLevel: 60,
   checkUpdates: true,
+  ownAlerts: true,
 };
 
 let config;
@@ -259,15 +260,146 @@ async function refreshProfile(profile) {
   }
 }
 
-// Notifications are always silent for Windows; the app plays its own chime instead. Each
-// one is held on to until it is closed: let go of, a click on it would no longer be heard.
+// Something to tell the user: Tandem's own alert above its icons or, with that turned off,
+// a notification of Windows. Either way the caller gets something to hang a click on and to
+// show. Notifications are always silent for Windows; the app plays its own chime instead.
+// Each one is held on to until it is closed: let go of, a click on it would no longer be heard.
 const notifications = new Set();
 function createNotification(options) {
   if (config.settings.sound && alive()) win.webContents.send('play-sound');
-  const notification = new Notification({ ...options, silent: true });
+  if (config.settings.ownAlerts) return ownAlert(options);
+  // What the alert is about and how pressing it is are for Tandem's own alerts to draw.
+  const { kind, level, meters, ...words } = options;
+  const notification = new Notification({ ...words, silent: true });
   notifications.add(notification);
   notification.on('close', () => notifications.delete(notification));
   return notification;
+}
+
+// ---------- Tandem's own alerts ----------
+
+// Windows shows its notifications where it sees fit. Tandem's own go in a small window of
+// their own, right above its icons in the taskbar, one at a time: the page of that window
+// is given the words, answers with how tall they came out, is placed and shown, and says
+// when the alert is gone (alert.js).
+const ALERT_WIDTH = 348;
+const ALERT_MS = 8000;
+const ALERT_GAP = 5; // between the alert, pointer included, and the edge of the screen's free area
+let alertWin = null;
+let alertLoaded = false;
+let alertNow = null; // the alert on screen or on its way there: { title, body, click }
+const alertQueue = [];
+
+// Stands in for a notification of Windows: the same two things are asked of it.
+function ownAlert({ title, body, kind, level, meters }) {
+  const alert = { title: String(title || ''), body: String(body || ''), kind, level, meters: meters || [], click: null };
+  return {
+    on(event, handler) {
+      if (event === 'click') alert.click = handler;
+      return this;
+    },
+    show() {
+      alertQueue.push(alert);
+      // Never a long line of them: the oldest that has not been shown gives way.
+      if (alertQueue.length > 4) alertQueue.shift();
+      if (!alertNow) nextAlert();
+    },
+  };
+}
+
+function nextAlert() {
+  alertNow = alertQueue.shift() || null;
+  if (quitting) return;
+  if (!alertNow) {
+    if (alertWin && !alertWin.isDestroyed()) alertWin.hide();
+    return;
+  }
+  if (!alertWin || alertWin.isDestroyed()) {
+    alertLoaded = false;
+    alertWin = new BrowserWindow({
+      width: ALERT_WIDTH,
+      height: 96,
+      frame: false,
+      transparent: true,
+      thickFrame: false,
+      resizable: false,
+      movable: false,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      // Never takes the keyboard from whatever the user is typing in.
+      focusable: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
+      show: false,
+      webPreferences: {
+        preload: path.join(__dirname, 'alert-preload.js'),
+        contextIsolation: true,
+        sandbox: true,
+        backgroundThrottling: false,
+      },
+    });
+    alertWin.setAlwaysOnTop(true, 'pop-up-menu');
+    const page = alertWin.webContents;
+    page.on('will-navigate', (e, url) => { if (url !== page.getURL()) e.preventDefault(); });
+    page.setWindowOpenHandler(() => ({ action: 'deny' }));
+    page.on('did-finish-load', () => {
+      alertLoaded = true;
+      sayAlert();
+    });
+    alertWin.on('closed', () => { alertWin = null; });
+    alertWin.loadFile(path.join(__dirname, 'renderer', 'alert.html'));
+    return;
+  }
+  sayAlert();
+}
+
+function sayAlert() {
+  if (!alertNow || !alertLoaded || !alertWin || alertWin.isDestroyed()) return;
+  const { title, body, kind, level, meters } = alertNow;
+  alertWin.webContents.send('say', { title, body, kind, level, meters, theme: config.settings.theme, language: config.settings.language, ms: ALERT_MS });
+}
+
+// Where an alert that came out `height` tall goes. Above Tandem's icons when they are
+// on a taskbar, with `tail` saying how far from the alert's left edge they are; in the
+// corner by the clock when the icons are tucked away among the hidden ones.
+function alertPlace(height) {
+  const icons = [...trays.values()].map((tray) => tray.getBounds()).filter((b) => b.width > 0 && b.height > 0);
+  const corner = (area) => ({ x: area.x + area.width - ALERT_WIDTH - ALERT_GAP, y: area.y + area.height - height - ALERT_GAP, tail: null });
+  if (!icons.length) return corner(screen.getPrimaryDisplay().workArea);
+  const left = Math.min(...icons.map((b) => b.x));
+  const right = Math.max(...icons.map((b) => b.x + b.width));
+  const cx = (left + right) / 2;
+  const cy = icons[0].y + icons[0].height / 2;
+  const area = screen.getDisplayNearestPoint({ x: Math.round(cx), y: Math.round(cy) }).workArea;
+  const inside = cx >= area.x && cx < area.x + area.width && cy >= area.y && cy < area.y + area.height;
+  // Not on a taskbar: the icons are in the box of hidden ones, which may not even be open.
+  if (inside) return corner(area);
+  const within = (value, low, high) => Math.round(Math.max(low, Math.min(value, high)));
+  const x = within(cx - ALERT_WIDTH / 2, area.x + ALERT_GAP, area.x + area.width - ALERT_WIDTH - ALERT_GAP);
+  const y = within(cy - height / 2, area.y + ALERT_GAP, area.y + area.height - height - ALERT_GAP);
+  // The pointer is drawn under the alert, so only a taskbar below it gets one.
+  const below = cy >= area.y + area.height;
+  return { x, y, tail: below ? within(cx - x, 28, ALERT_WIDTH - 28) : null };
+}
+
+// The alert's page has laid out its words: it is put in place and shown.
+function showAlert(height) {
+  if (!alertNow || !alertWin || alertWin.isDestroyed() || !Number.isFinite(height)) return;
+  const tall = Math.max(40, Math.min(Math.round(height), 400));
+  const { x, y, tail } = alertPlace(tall);
+  alertWin.setBounds({ x, y, width: ALERT_WIDTH, height: tall });
+  alertWin.webContents.send('place', { tail });
+  alertWin.showInactive();
+}
+
+// The alert is gone from its page, pressed or not.
+function endAlert(clicked) {
+  const alert = alertNow;
+  if (!alert) return;
+  if (alertWin && !alertWin.isDestroyed()) alertWin.hide();
+  if (clicked && alert.click) alert.click();
+  nextAlert();
 }
 
 function showWindow() {
@@ -344,6 +476,18 @@ function followInUse() {
   return true;
 }
 
+// An account's session and weekly limits as the bars of an alert, named like its two
+// chips; `also` is the limit the alert is about, added when it is another one.
+function limitMeters(metrics, also) {
+  const row = (id, tag) => {
+    const m = metrics.find((x) => x.id === id);
+    return m ? [{ tag, pct: m.pct }] : [];
+  };
+  const rows = [...row('five_hour', '5h'), ...row('seven_day', '7d')];
+  if (also && !['five_hour', 'seven_day'].includes(also.id)) rows.push({ tag: t(`metric.${also.id}`), pct: also.pct });
+  return rows;
+}
+
 function recordSample(key, profile, org, metrics) {
   const total = metrics.reduce((sum, m) => sum + m.pct, 0);
   const prev = prevTotals.get(key);
@@ -366,12 +510,18 @@ function recordSample(key, profile, org, metrics) {
     // A limit that was nearly exhausted has reset: the account is usable again.
     if (before === 2 && level === 0 && m.id !== 'extra_usage') {
       createNotification({
+        kind: 'reset',
+        level: 'low',
+        meters: limitMeters(metrics, m),
         title: t('notifResetTitle', { label: org.alias || profile.label }),
         body: t('notifResetBody', { metric: t(`metric.${m.id}`), pct: m.pct }),
       }).show();
     }
     if (before !== undefined && level > before && !handoffCase) {
       createNotification({
+        kind: 'gauge',
+        level: level === 2 ? 'crit' : 'warn',
+        meters: limitMeters(metrics, m),
         title: t('notifTitle', { label: org.alias || profile.label, metric: t(`metric.${m.id}`), pct: m.pct }),
         body: t('notifBody', { org: org.name, threshold: level === 2 ? config.settings.critAt : config.settings.warnAt }),
       }).show();
@@ -543,6 +693,9 @@ function notifyContext() {
     contextNotified.add(s.id);
     generatePrompts([s.id]);
     const notification = createNotification({
+      kind: 'bill',
+      level: 'warn',
+      meters: [{ pct: Math.min(100, (s.context / (limit * 2)) * 100), mark: 50, level: 'crit', text: `${Math.round(s.context / 1000)}K / ${limit / 1000}K` }],
       title: t('notifCtxTitle', { name: s.name, n: `${Math.round(s.context / 1000)}K` }),
       body: t('notifCtxBody'),
     });
@@ -562,6 +715,9 @@ function notifyProjection(state) {
   if (minutes > 15 || minutes < 0 || projectionNotified.has(id)) return;
   projectionNotified.add(id);
   const notification = createNotification({
+    kind: 'hourglass',
+    level: 'warn',
+    meters: limitMeters(active.metrics),
     title: t('notifPaceTitle', { label: active.label, n: Math.max(minutes, 1) }),
     body: t('notifPaceBody', { pct: metric.pct }),
   });
@@ -603,6 +759,10 @@ function notifyHandoff(state) {
   if (handoffNotified === handoff.fromKey || !config.settings.alerts) return;
   handoffNotified = handoff.fromKey;
   const notification = createNotification({
+    kind: 'swap',
+    level: 'crit',
+    // The account that ran out and, when there is one, the one with room.
+    meters: [{ tag: handoff.fromLabel, pct: handoff.pct }, ...(handoff.toKey ? [{ tag: handoff.toLabel, pct: handoff.toPct }] : [])],
     title: t('handoffTitle', { label: handoff.fromLabel, metric: t(`metric.${handoff.metricId}`), pct: handoff.pct }),
     body: handoff.toKey ? t('handoffAlt', { label: handoff.toLabel, pct: handoff.toPct }) : t('handoffNone'),
   });
@@ -660,7 +820,7 @@ async function checkUpdate() {
   if (latest && config.updateTold !== latest) {
     config.updateTold = latest;
     saveConfig();
-    const notification = createNotification({ title: t('updateTitle', { version: latest }), body: t('updateBody') });
+    const notification = createNotification({ kind: 'download', title: t('updateTitle', { version: latest }), body: t('updateBody') });
     notification.on('click', () => openLink('update'));
     notification.show();
   }
@@ -1161,6 +1321,11 @@ function setSetting(name, value) {
   if (name === 'glass' || (name === 'theme' && config.settings.glass)) setGlass(config.settings.glass);
   if (name === 'hideFromTaskbar' && alive()) win.setSkipTaskbar(value);
   if (name === 'refreshSec') schedulePoll();
+  if (name === 'ownAlerts' && !value) {
+    alertQueue.length = 0;
+    alertNow = null;
+    if (alertWin && !alertWin.isDestroyed()) alertWin.hide();
+  }
   if (name === 'checkUpdates') {
     Object.assign(update, { latest: null, checked: false });
     if (value) checkUpdate();
@@ -1211,6 +1376,12 @@ function registerIpc() {
   ipcMain.on('set-setting', (_e, name, value) => setSetting(name, value));
   ipcMain.on('glass', (_e, height) => placeGlass(height));
   ipcMain.on('open-link', (_e, name) => openLink(String(name)));
+  // What an alert looks like and where it shows, for whoever is deciding in the settings.
+  ipcMain.on('test-alert', () => createNotification({ kind: 'bell', title: 'Tandem', body: t('alertTest'), meters: [{ tag: '5h', pct: 38 }, { tag: '7d', pct: 76 }] }).on('click', showWindow).show());
+  // Only the alert's own page is listened to about the alert.
+  const fromAlert = (e) => Boolean(alertWin) && !alertWin.isDestroyed() && e.sender === alertWin.webContents;
+  ipcMain.on('alert-size', (e, height) => { if (fromAlert(e)) showAlert(height); });
+  ipcMain.on('alert-done', (e, clicked) => { if (fromAlert(e)) endAlert(clicked === true); });
   ipcMain.on('resize', (_e, height) => setPanel(height));
   ipcMain.on('tray-images', (_e, sent) => {
     // Two icons at most, each a picture the page drew: nothing else becomes a tray icon.

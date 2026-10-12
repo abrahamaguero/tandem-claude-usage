@@ -88,6 +88,37 @@ button, input, select { font: inherit; }
 .glass .hero, .glass .action.chats, .glass .tips-hero, .glass header button.on { background-color: var(--c, var(--accent)); box-shadow: none; }
 .glass .action.chats, .glass .tips-hero, .glass header button.on { background-color: var(--accent); }
 
+/* ---------- Tandem's own alert (alert.html) ---------- */
+
+/* A tile on its own, in a window just its size, with a pointer down to the icons it
+   stands above. */
+.alert-page { padding: 0; }
+.alert { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 9px; padding: 13px 12px 13px 14px; border-radius: 18px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
+/* What the alert is about, in the color of how pressing it is. */
+.alert-icon { --s: var(--accent); flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: color-mix(in srgb, var(--s) 16%, var(--raise)); color: var(--s); }
+.alert-icon.low { --s: var(--low); }
+.alert-icon.warn { --s: var(--warn); }
+.alert-icon.crit { --s: var(--crit); }
+.alert-icon svg { width: 22px; height: 22px; }
+.alert-icon path { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.alert-text { flex: 1; min-width: 0; }
+.alert-text strong { display: block; font: 700 13.5px/1.3 var(--display); overflow-wrap: anywhere; }
+.alert-text span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+/* The limits or the chat it is about: a short name, the bar, its figure. */
+.alert-meters { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 6px 9px; margin: 8px 0 7px; }
+.alert-meters.plain { grid-template-columns: 1fr auto; }
+.alert-meters:empty { display: none; }
+.alert-meters small { max-width: 110px; overflow: hidden; color: var(--muted); font-size: 10.5px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.alert-meters .bar { position: relative; height: 7px; }
+.alert-meters .bar i { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--text); }
+.alert-meters b { --s: var(--ok); color: var(--s); font: 800 12.5px/1 var(--display); text-align: right; white-space: nowrap; }
+.alert-meters b.low { --s: var(--low); }
+.alert-meters b.warn { --s: var(--warn); }
+.alert-meters b.crit { --s: var(--crit); }
+#alert-close { flex: none; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: var(--raise); color: var(--muted); font-size: 11px; line-height: 1; cursor: pointer; }
+#alert-close:hover { background: var(--line); color: var(--text); }
+#alert-tail { position: absolute; bottom: -6px; width: 14px; height: 14px; margin-left: -7px; border-radius: 3px; background: var(--panel); box-shadow: inset -1px -1px 0 0 var(--line); transform: rotate(45deg); }
+
 /* ---------- header ---------- */
 
 header { display: flex; align-items: center; gap: 6px; padding: 12px 12px 4px 16px; -webkit-app-region: drag; }

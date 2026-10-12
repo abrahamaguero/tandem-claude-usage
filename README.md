@@ -19,8 +19,9 @@ chat over to another.
   from green to blue, orange and red as it is used up.
 - **Knows which account is in use.** It finds the account your Claude apps are on right now and shows it in
   two small icons next to the clock: one for the session, one for the week.
-- **Warns you in time.** Notifications at two thresholds you choose, when the account in use is about to run
-  out (and which other account has room), and when a chat has grown past the size you set.
+- **Warns you in time.** At two thresholds you choose, when the account in use is about to run out (and
+  which other account has room), and when a chat has grown past the size you set. The alerts show right
+  above Tandem's icons, with the limits as bars; they can be the notifications of Windows instead.
 - **Active sessions.** The Claude Code chats you used in the last 24 hours, each with the size of its context,
   whether its prompt cache is still warm, what a message costs, its model and effort, how many connectors it
   loads and how many images it carries.

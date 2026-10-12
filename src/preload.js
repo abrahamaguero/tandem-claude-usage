@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('api', {
   setActive: (key) => ipcRenderer.send('set-active', key),
   setSetting: (name, value) => ipcRenderer.send('set-setting', name, value),
   openLink: (name) => ipcRenderer.send('open-link', name),
+  testAlert: () => ipcRenderer.send('test-alert'),
   addProfile: (label) => ipcRenderer.send('add-profile', label),
   login: (profileId) => ipcRenderer.send('login', profileId),
   removeProfile: (profileId) => ipcRenderer.send('remove-profile', profileId),

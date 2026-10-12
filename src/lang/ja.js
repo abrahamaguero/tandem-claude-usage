@@ -313,6 +313,10 @@ const LANG_JA = {
   feedbackAsk: 'アイデアや不具合はありますか？',
   feedback: 'フィードバックを送る',
   feedbackTip: 'ブラウザで Tandem の GitHub ページを開きます',
+  optOwnAlerts: 'タスクバーの上に通知を表示',
+  optOwnAlertsTip: 'オフにすると Windows の通知を使います',
+  alertTest: 'Tandem からの通知はここに表示されます。',
+  alertTestTip: 'テスト通知を表示',
   footer: '非公式ツール — Anthropic とは提携していません。',
 };
 
