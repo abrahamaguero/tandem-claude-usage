@@ -203,6 +203,13 @@ main.arrive > :not(.account):not(.habits):not(.ghosts), main.arrive > .account.c
 .closed .now { background: var(--c); color: var(--ink); }
 .closed .swatches { flex-basis: 100%; }
 
+/* A newer version to download: one line above the accounts, in the color that pops. */
+.update { display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 18px; background: var(--pop); color: var(--on-pop); }
+.update div { flex: 1; min-width: 0; }
+.update strong { display: block; font: 700 14px/1.3 var(--display); }
+.update span { display: block; font-size: 11.5px; line-height: 1.35; opacity: 0.85; }
+.update button.primary { flex: none; background: var(--on-pop); color: var(--pop); }
+
 .chips { display: flex; gap: 6px; }
 .chip { --s: var(--ok); min-width: 30px; padding: 2px 10px; border: 2px solid var(--s); border-radius: 999px; color: var(--s); font: 800 13px/1.4 var(--display); text-align: center; }
 .chip small { margin-right: 4px; font-size: 9px; font-weight: 700; opacity: 0.75; }
@@ -296,7 +303,8 @@ main.arrive > :not(.account):not(.habits):not(.ghosts), main.arrive > .account.c
 /* The chat's context, set apart from its name and prompt: one labelled line each. */
 .session-context { display: flex; flex-direction: column; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line); }
 .ctx-line { display: flex; align-items: center; gap: 8px; min-height: 22px; color: var(--muted); font-size: 11px; }
-.ctx-label { flex: none; width: 54px; }
+.ctx-label { flex: none; width: 54px; white-space: nowrap; }
+:lang(ja) .ctx-label { width: 60px; } /* キャッシュ is five characters as wide as they are tall */
 .ctx-line .bar, .folded .bar { position: relative; height: 6px; }
 .ctx-line .bar { flex: 1; }
 .ctx-line .bar i, .folded .bar i { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--text); }

@@ -30,7 +30,9 @@ chat over to another.
   eight habits that pay off and how to apply each.
 - **Graphify, optionally.** If you have the `graphify` command-line tool installed, Tandem can turn its
   knowledge graph on or off for a chat's project.
-- A guided tour for new users, English and Spanish, five themes, and an optional glass effect.
+- A guided tour for new users, five themes, and an optional glass effect.
+- In English, Spanish, Brazilian Portuguese, French, German and Japanese. A new install starts in the
+  language of your system; you can change it in Settings.
 
 ## Install
 
@@ -41,13 +43,21 @@ chat over to another.
 
 Requires Windows 10 or 11 (64-bit). The glass effect needs Windows 11 22H2 or later.
 
-Updating is running the newer installer over the old one; accounts, sign-ins and settings are kept.
+## Updates and feedback
+
+- **Updates.** Tandem tells you when a newer version is out, with a notice in the app and a notification
+  that take you to the download. Updating is running the newer installer over the old one; accounts,
+  sign-ins and settings are kept. Version 0.4.0 does not check: if you have it, get the latest once by hand.
+- **Feedback.** Ideas and problems are welcome as [issues](../../issues/new/choose). There is a button for
+  it at the bottom of Settings.
 
 ## Privacy
 
 - **Your password never reaches Tandem.** You sign in on claude.ai itself, in a browser window of the app.
   Each account gets its own isolated session, stored in Tandem's data folder like a browser profile.
-- **It only talks to claude.ai.** There is no server of its own, no analytics and no telemetry.
+- **It talks to claude.ai, and nothing of yours goes anywhere else.** There is no server of its own, no
+  analytics and no telemetry. Twice a day it asks GitHub for the number of the latest version; you can
+  turn that off in Settings.
 - **Everything else is read locally and stays there.** To list your chats, Tandem reads the Claude Code
   transcripts in `~/.claude/projects` and the session list of the Claude desktop app.
 - **Handoff prompts are saved as plain text.** They hold excerpts of your chat (what you asked, your last
@@ -76,7 +86,12 @@ node tools/handoff-test.js
 node tools/claude-app-test.js
 node tools/images-test.js
 node tools/graphify-test.js
+node tools/i18n-test.js
 ```
+
+To add a language, copy `src/lang/en.js`, translate its texts, and add the language to the list in
+`src/i18n.js`, to the scripts of `src/renderer/index.html` and to the handoff texts in `src/handoff.js`.
+`tools/i18n-test.js` tells you what is missing.
 
 ## How it is built
 
@@ -92,7 +107,7 @@ Electron, with no framework in the interface.
 | `src/images.js` | counts the images inside a transcript, in the background |
 | `src/graphify.js` | runs the graphify command-line tool |
 | `src/store.js` | JSON files written atomically, with a backup |
-| `src/i18n.js` | English and Spanish texts |
+| `src/lang/` | the texts, one file per language; `src/i18n.js` loads them |
 
 The typeface is [Outfit](https://github.com/Outfitio/Outfit-Fonts), under the SIL Open Font License
 (`src/renderer/fonts/Outfit-OFL.txt`).

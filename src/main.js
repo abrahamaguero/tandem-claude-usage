@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, session, nativeImage, nativeTheme, Notification, screen, clipboard } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, session, nativeImage, nativeTheme, Notification, screen, clipboard, shell, net } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -36,6 +36,7 @@ const DEFAULT_SETTINGS = {
   guideSeen: false,
   glass: false,
   glassLevel: 60,
+  checkUpdates: true,
 };
 
 let config;
@@ -71,12 +72,23 @@ function configPath() {
   return path.join(app.getPath('userData'), 'config.json');
 }
 
+// The language of the system, when Tandem speaks it: the one a new install starts in.
+// "es-419" is served by "es", and "pt-PT" by the Portuguese there is.
+function systemLanguage() {
+  const base = (code) => code.toLowerCase().split('-')[0];
+  for (const wanted of [...app.getPreferredSystemLanguages(), app.getLocale()]) {
+    const match = languages.find((code) => code.toLowerCase() === wanted.toLowerCase()) || languages.find((code) => base(code) === base(wanted));
+    if (match) return match;
+  }
+  return DEFAULT_SETTINGS.language;
+}
+
 function loadConfig() {
   // A damaged config.json falls back to the last good copy instead of starting empty,
   // which would drop the accounts on the next save.
   const saved = readJson(configPath()) || {};
   const blank = { profiles: [], activeKey: null, viewKey: null, inUse: { uuid: null, cli: null, desktopT: 0 }, lastActivity: {}, switchLog: [], bounds: null };
-  config = { ...blank, ...saved, settings: { ...DEFAULT_SETTINGS, ...saved.settings } };
+  config = { ...blank, ...saved, settings: { ...DEFAULT_SETTINGS, language: systemLanguage(), ...saved.settings } };
   // The file may have been edited by hand or written by another version: anything that
   // does not have the shape the rest of the app counts on goes back to its default.
   const plain = (value) => value && typeof value === 'object' && !Array.isArray(value);
@@ -599,6 +611,65 @@ function notifyHandoff(state) {
   if (alive()) win.showInactive();
 }
 
+// ---------- new versions and feedback ----------
+
+// Tandem is published on GitHub, as releases. Twice a day it asks there for the number of
+// the latest one, and that is all it asks or sends. A newer one is told in the app and
+// in a notification; downloading and installing it is left to the user.
+const REPO = 'abrahamaguero/tandem-claude-usage';
+// The only pages the app opens in the browser.
+const LINKS = {
+  update: `https://github.com/${REPO}/releases/latest`,
+  feedback: `https://github.com/${REPO}/issues/new/choose`,
+};
+const UPDATE_EVERY = 12 * 3600 * 1000;
+// `latest` is the version there is to download when it is newer than this one; `checked`,
+// whether the last time GitHub was asked it answered.
+const update = { latest: null, checked: false };
+
+// Whether version `a` comes after version `b`, both written like "1.2.3".
+function isNewer(a, b) {
+  const [x, y] = [a, b].map((version) => version.split('.').map(Number));
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+  return false;
+}
+
+async function checkUpdate() {
+  if (!config.settings.checkUpdates) return;
+  let latest = null;
+  let checked = false;
+  try {
+    const res = await net.fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github+json' },
+      signal: AbortSignal.timeout(20000),
+    });
+    const found = res.ok && /^v?(\d+\.\d+\.\d+)$/.exec(String((await res.json()).tag_name));
+    if (found) {
+      checked = true;
+      if (isNewer(found[1], app.getVersion())) latest = found[1];
+    }
+  } catch {
+    // Offline, or GitHub not answering: the next time will tell.
+  }
+  // Turned off while the answer was on its way, or nothing to add to what was known.
+  if (!config.settings.checkUpdates || (!checked && update.checked)) return;
+  const changed = latest !== update.latest || checked !== update.checked;
+  Object.assign(update, { latest, checked });
+  if (changed) pushState();
+  // Said once for each version, not at every start until it is installed.
+  if (latest && config.updateTold !== latest) {
+    config.updateTold = latest;
+    saveConfig();
+    const notification = createNotification({ title: t('updateTitle', { version: latest }), body: t('updateBody') });
+    notification.on('click', () => openLink('update'));
+    notification.show();
+  }
+}
+
+function openLink(name) {
+  if (Object.hasOwn(LINKS, name)) shell.openExternal(LINKS[name]);
+}
+
 // ---------- saved handoff prompts ----------
 
 // Generated prompts are kept on disk so they can be copied later, after switching accounts.
@@ -771,6 +842,7 @@ function buildState() {
     })),
     version: app.getVersion(),
     glassOk: GLASS_OK,
+    update: { ...update },
   };
 }
 
@@ -1066,6 +1138,10 @@ function setSetting(name, value) {
   if (name === 'glass' || (name === 'theme' && config.settings.glass)) setGlass(config.settings.glass);
   if (name === 'hideFromTaskbar' && alive()) win.setSkipTaskbar(value);
   if (name === 'refreshSec') schedulePoll();
+  if (name === 'checkUpdates') {
+    Object.assign(update, { latest: null, checked: false });
+    if (value) checkUpdate();
+  }
   if (name === 'autoSwitch') followInUse();
   if (name === 'launchAtStartup') {
     app.setLoginItemSettings({
@@ -1111,6 +1187,7 @@ function registerIpc() {
   ipcMain.on('set-active', (_e, key) => setActive(key));
   ipcMain.on('set-setting', (_e, name, value) => setSetting(name, value));
   ipcMain.on('glass', (_e, height) => placeGlass(height));
+  ipcMain.on('open-link', (_e, name) => openLink(String(name)));
   ipcMain.on('resize', (_e, height) => setPanel(height));
   ipcMain.on('tray-images', (_e, sent) => {
     // Two icons at most, each a picture the page drew: nothing else becomes a tray icon.
@@ -1224,6 +1301,8 @@ if (!app.requestSingleInstanceLock()) {
     watchInUse();
     await refreshAll();
     schedulePoll();
+    checkUpdate();
+    setInterval(checkUpdate, UPDATE_EVERY);
   }).catch((err) => {
     // Without this the app would stay running with no window and no tray icon, and hold
     // on to being the only copy: starting it again would do nothing.

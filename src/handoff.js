@@ -264,6 +264,50 @@ const TEXT = {
     files: 'Archivos que editó más recientemente',
     outro: 'Empieza leyendo los archivos relevantes para ponerte al día y luego continúa con lo pendiente. Pregúntame si algo no queda claro.',
   },
+  'pt-BR': {
+    intro: 'Estou continuando um trabalho que comecei em outra sessão do Claude, que ficou sem uso disponível. Retome de onde ela parou.',
+    folder: 'Pasta do projeto',
+    branch: 'Branch do Git',
+    topic: 'Título da sessão',
+    first: 'Pedido original',
+    recent: 'Minhas mensagens mais recentes (da mais antiga à mais nova)',
+    last: 'Onde a sessão anterior parou (sua última resposta)',
+    files: 'Arquivos que ela editou mais recentemente',
+    outro: 'Comece lendo os arquivos relevantes para se situar e depois continue com o que ficou pendente. Pergunte se algo não estiver claro.',
+  },
+  fr: {
+    intro: 'Je poursuis un travail commencé dans une autre session Claude, qui est arrivée au bout de son quota. Reprends-le là où il s’est arrêté.',
+    folder: 'Dossier du projet',
+    branch: 'Branche Git',
+    topic: 'Titre de la session',
+    first: 'Demande d’origine',
+    recent: 'Mes messages les plus récents (du plus ancien au plus récent)',
+    last: 'Où la session précédente s’est arrêtée (sa dernière réponse)',
+    files: 'Fichiers qu’elle a modifiés en dernier',
+    outro: 'Commence par lire les fichiers concernés pour te mettre à jour, puis continue le travail en attente. Demande-moi si quelque chose n’est pas clair.',
+  },
+  de: {
+    intro: 'Ich setze eine Arbeit fort, die ich in einer anderen Claude-Sitzung begonnen habe; deren Kontingent ist aufgebraucht. Mach dort weiter, wo sie aufgehört hat.',
+    folder: 'Projektordner',
+    branch: 'Git-Branch',
+    topic: 'Titel der Sitzung',
+    first: 'Ursprüngliche Anfrage',
+    recent: 'Meine letzten Nachrichten (älteste zuerst)',
+    last: 'Wo die vorherige Sitzung aufgehört hat (ihre letzte Antwort)',
+    files: 'Dateien, die sie zuletzt bearbeitet hat',
+    outro: 'Lies zuerst die betroffenen Dateien, um auf den Stand zu kommen, und mach dann mit dem Offenen weiter. Frag mich, wenn etwas unklar ist.',
+  },
+  ja: {
+    intro: '別の Claude セッションで始めた作業の続きです。そのセッションは利用上限に達しました。中断したところから再開してください。',
+    folder: 'プロジェクトのフォルダ',
+    branch: 'Git ブランチ',
+    topic: 'セッションのタイトル',
+    first: '最初の依頼',
+    recent: '直近の私のメッセージ（古い順）',
+    last: '前のセッションが中断したところ（最後の返信）',
+    files: '最後に編集されたファイル',
+    outro: 'まず関連するファイルを読んで状況を把握し、残りの作業を続けてください。不明な点があれば質問してください。',
+  },
 };
 
 // `appTitle` is the chat's current name in the Claude app, when it is known.
@@ -292,4 +336,4 @@ function buildHandoff(language, id, appTitle) {
   return { prompt: parts.join('\n'), project: projectName(s), title: s.title || clip(s.userMessages[0], 60) };
 }
 
-module.exports = { buildHandoff, listSessions, recentTranscripts, transcriptLines, readSession, ROOT, MB, GLANCE };
+module.exports = { buildHandoff, listSessions, recentTranscripts, transcriptLines, readSession, ROOT, MB, GLANCE, TEXT };

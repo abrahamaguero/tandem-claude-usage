@@ -765,7 +765,7 @@ function renderUsage() {
   const before = places(viewUsage);
   const were = accountsIn(viewUsage);
   // One account that cannot be drawn must not take the rest of the view with it.
-  setChildren(viewUsage, state.accounts.map((a) => {
+  setChildren(viewUsage, updateEl(), state.accounts.map((a) => {
     try {
       return cardEl(a);
     } catch (err) {
@@ -775,6 +775,15 @@ function renderUsage() {
   }));
   fadeOut(viewUsage, were);
   glide(viewUsage, before);
+}
+
+// A newer version to download, when there is one: a line above the accounts.
+function updateEl() {
+  const { latest } = state.update;
+  if (!latest) return null;
+  return keyed('update', h('div', { class: 'tile update' },
+    h('div', {}, h('strong', {}, t('updateTitle', { version: latest })), h('span', {}, t('updateBody'))),
+    h('button', { class: 'primary', onclick: () => api.openLink('update') }, t('updateGet'))));
 }
 
 // ---------- per-account activity ----------
@@ -917,7 +926,7 @@ function renderSettings() {
 
   // Blur first: the form is not rebuilt while one of its controls has focus.
   const language = h('select', { onchange: (e) => { e.target.blur(); api.setSetting('language', e.target.value); } },
-    [['en', 'English'], ['es', 'Español']].map(([v, name]) =>
+    Object.entries(LANGUAGES).map(([v, name]) =>
       h('option', { value: v, selected: state.settings.language === v }, name)));
 
   const theme = h('select', { onchange: (e) => { e.target.blur(); api.setSetting('theme', e.target.value); } },
@@ -973,12 +982,21 @@ function renderSettings() {
       h('div', { class: 'row' }, h('label', {}, t('optContext')), picker(contextWarn)),
       h('div', { class: 'note' }, t('ctxHelp')),
       chats && h('div', { class: 'note' }, t('ctxNow', { chats }))),
+    group(t('about'),
+      toggleRow('checkUpdates', t('optUpdates')),
+      h('div', { class: 'row' },
+        h('label', {}, state.update.latest ? t('updateTitle', { version: state.update.latest })
+          : state.update.checked ? t('updateNone', { version: state.version }) : `Tandem ${state.version}`),
+        state.update.latest && h('button', { class: 'primary', onclick: (e) => { e.target.blur(); api.openLink('update'); } }, t('updateGet'))),
+      h('div', { class: 'row' },
+        h('label', {}, t('feedbackAsk')),
+        h('button', { class: 'ghost', title: t('feedbackTip'), onclick: (e) => { e.target.blur(); api.openLink('feedback'); } }, t('feedback')))),
     h('footer', {}, `v${state.version} · ${t('footer')}`));
 }
 
 // ---------- tips ----------
 
-// What saves the most, in order. Each has its drawing; titles and texts are in i18n.js
+// What saves the most, in order. Each has its drawing; titles and texts are in lang/
 // under tips.h.<n>.…, by position.
 const HABITS = ['newChat', 'flame', 'tidy', 'graph', 'gauge', 'plug', 'image', 'target'];
 let openTip = null; // which habit is unfolded
@@ -1086,7 +1104,7 @@ function setView(next) {
 
 // The tour for new users. Each page shows a working copy of one part of the app (its
 // stage) and walks through its spots: an arrow points at one, and Tandem says below what
-// it is for. Titles and texts are in i18n.js under g.<page>.…, by position.
+// it is for. Titles and texts are in lang/ under g.<page>.…, by position.
 
 // What the copies on the stages show. The tour's own buttons change it; the real app is
 // never touched.
@@ -1363,7 +1381,7 @@ const pic = {
 // The pages and their spots. `at` is the piece of the stage the arrow points at, or the
 // id of a control of the real header; `pic` draws the picture next to the words. A `quiet`
 // spot has no words: the page says it all. `try` is what the spot's own button does;
-// while `on` holds, the texts listed in `swap` use their second version (…On in i18n.js).
+// while `on` holds, the texts listed in `swap` use their second version (…On in lang/).
 const GUIDE = [
   { id: 'welcome', stage: welcomeStage, spots: [{ quiet: true }] },
   { id: 'accounts', stage: accountsStage, spots: [
