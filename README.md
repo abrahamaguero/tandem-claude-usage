@@ -34,7 +34,7 @@ chat over to another.
 
 ## Install
 
-1. Download `Tandem Setup x.y.z.exe` from the [latest release](../../releases/latest).
+1. Download `Tandem.Setup.x.y.z.exe` from the [latest release](../../releases/latest).
 2. Run it. The installer is not code-signed, so Windows SmartScreen will warn you: choose **More info → Run
    anyway**.
 3. Tandem opens next to the clock. Add an account in Settings and sign in to claude.ai in the window that opens.
