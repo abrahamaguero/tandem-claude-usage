@@ -6,6 +6,10 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.6.1] - 2026-10-18
+
 ### Fixed
 
 - The ✕ of an alert, and pressing the alert to open Tandem, did nothing: Windows was not passing the
@@ -45,7 +49,8 @@ touch-ups are left out unless they change how something is used. The format foll
 
 First public release.
 
-[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.4.0...v0.5.0
