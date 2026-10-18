@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, session, nativeImage, nativeTheme, Notification, screen, clipboard, shell, net } = require('electron');
+const { app, BaseWindow, BrowserWindow, WebContentsView, Tray, Menu, ipcMain, dialog, session, nativeImage, nativeTheme, Notification, screen, clipboard, shell, net } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
@@ -1203,42 +1203,75 @@ function toggleWindow() {
   else win.show();
 }
 
+// The sign-in to claude.ai for one account, in a window of its own: the account's session
+// is what Tandem reads the usage with, and a browser does not hand its sessions to other
+// programs. On top of the page goes a line of Tandem's own (login-note.html) saying how to
+// get through quickly; that is why the window is made of two parts.
 function openLogin(profile) {
   const existing = loginWindows.get(profile.id);
   if (existing && !existing.isDestroyed()) return existing.focus();
   lockDown(session.fromPartition(profile.partition));
   const title = t('signInTitle', { label: profile.label });
-  const loginWin = new BrowserWindow({
+  const loginWin = new BaseWindow({
     width: 520,
-    height: 780,
+    height: 840,
     title,
     autoHideMenuBar: true,
     icon: path.join(__dirname, 'icon.png'),
-    webPreferences: { partition: profile.partition, sandbox: true, contextIsolation: true },
   });
+  const note = new WebContentsView({ webPreferences: { sandbox: true, contextIsolation: true } });
+  const view = new WebContentsView({ webPreferences: { partition: profile.partition, sandbox: true, contextIsolation: true } });
+  loginWin.contentView.addChildView(note);
+  loginWin.contentView.addChildView(view);
+  const page = view.webContents;
   loginWindows.set(profile.id, loginWin);
+
+  // The line is as tall as its words, which depends on the language; the page has the rest.
+  let noteHeight = 72;
+  const layout = () => {
+    if (loginWin.isDestroyed()) return;
+    const { width, height } = loginWin.getContentBounds();
+    note.setBounds({ x: 0, y: 0, width, height: noteHeight });
+    view.setBounds({ x: 0, y: noteHeight, width, height: Math.max(0, height - noteHeight) });
+  };
+  layout();
+  loginWin.on('resize', layout);
+  note.webContents.on('will-navigate', (e) => e.preventDefault());
+  note.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  note.webContents.on('did-finish-load', async () => {
+    try {
+      const tall = await note.webContents.executeJavaScript("document.querySelector('.login-note').offsetHeight");
+      if (Number.isFinite(tall) && tall > 0) {
+        noteHeight = Math.min(160, Math.ceil(tall));
+        layout();
+      }
+    } catch {}
+  });
+  note.webContents.loadFile(path.join(__dirname, 'renderer', 'login-note.html'), {
+    query: { title: t('loginNoteTitle'), text: t('loginNoteText'), theme: config.settings.theme, lang: config.settings.language },
+  });
+
   // The window has no address bar, so its title says which site is asking for the
   // password: signing in with Google or another provider takes it away from claude.ai.
   const showSite = () => {
     if (loginWin.isDestroyed()) return;
     let site = '';
     try {
-      site = new URL(loginWin.webContents.getURL()).host;
+      site = new URL(page.getURL()).host;
     } catch {}
     loginWin.setTitle(site ? `${title} · ${site}` : title);
   };
-  loginWin.on('page-title-updated', (e) => {
-    e.preventDefault();
-    showSite();
-  });
-  loginWin.webContents.on('did-navigate', showSite);
+  page.on('page-title-updated', showSite);
+  page.on('did-navigate', showSite);
+  // Ready to type in.
+  page.once('did-finish-load', () => { if (!loginWin.isDestroyed()) page.focus(); });
   // Windows the sign-in opens (a provider's own pop-up) are closed along with it.
   const popups = new Set();
-  loginWin.webContents.on('did-create-window', (popup) => {
+  page.on('did-create-window', (popup) => {
     popups.add(popup);
     popup.on('closed', () => popups.delete(popup));
   });
-  loginWin.loadURL(`${BASE}/login`);
+  page.loadURL(`${BASE}/login`);
   let checking = false;
   const timer = setInterval(async () => {
     if (loginWin.isDestroyed()) return clearInterval(timer);
@@ -1258,6 +1291,8 @@ function openLogin(profile) {
     clearInterval(timer);
     loginWindows.delete(profile.id);
     for (const popup of popups) if (!popup.isDestroyed()) popup.destroy();
+    // The two parts are not let go of along with their window.
+    for (const part of [note, view]) if (!part.webContents.isDestroyed()) part.webContents.close();
   });
 }
 

@@ -317,6 +317,8 @@ const LANG_FR = {
   optOwnAlertsTip: 'Désactivé\u00a0: Tandem utilise les notifications de Windows',
   alertTest: 'C’est ici que Tandem te préviendra.',
   alertTestTip: 'Afficher une alerte d’essai',
+  loginNoteTitle: 'Une fois par compte, et ça dure des semaines.',
+  loginNoteText: 'Pas de mot de passe enregistré ici\u00a0? Connecte-toi avec Google ou Apple, ou avec ton e-mail et le code que claude.ai t’envoie. Tandem ne peut pas reprendre la connexion de ton navigateur\u00a0: chaque navigateur garde la sienne.',
   footer: 'Outil non officiel — sans lien avec Anthropic.',
 };
 

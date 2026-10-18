@@ -318,6 +318,8 @@ const LANG_EN = {
   optOwnAlertsTip: 'Off: Tandem uses the notifications of Windows instead',
   alertTest: 'This is where Tandem will tell you things.',
   alertTestTip: 'Show a sample alert',
+  loginNoteTitle: 'Once per account, and it lasts for weeks.',
+  loginNoteText: 'No saved password here? Sign in with Google or Apple, or with your email and the code claude.ai sends you. Tandem cannot use the sign-in of your browser: each browser keeps its own.',
   footer: 'Unofficial tool — not affiliated with Anthropic.',
 };
 

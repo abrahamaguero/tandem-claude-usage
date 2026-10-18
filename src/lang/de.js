@@ -317,6 +317,8 @@ const LANG_DE = {
   optOwnAlertsTip: 'Aus: Tandem nutzt die Benachrichtigungen von Windows',
   alertTest: 'Hier meldet sich Tandem bei dir.',
   alertTestTip: 'Beispielhinweis anzeigen',
+  loginNoteTitle: 'Einmal pro Konto, und es hält wochenlang.',
+  loginNoteText: 'Kein gespeichertes Passwort hier? Melde dich mit Google oder Apple an oder mit deiner E-Mail und dem Code, den dir claude.ai schickt. Tandem kann die Anmeldung deines Browsers nicht nutzen: Jeder Browser behält seine eigene.',
   footer: 'Inoffizielles Tool — keine Verbindung zu Anthropic.',
 };
 

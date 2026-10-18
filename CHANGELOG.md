@@ -6,7 +6,10 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- A line on top of the sign-in window: you sign in once per account and it lasts for weeks, Google, Apple
+  or a code by email work without a saved password, and why Tandem cannot use the sign-in of your browser.
 
 ## [0.6.1] - 2026-10-18
 

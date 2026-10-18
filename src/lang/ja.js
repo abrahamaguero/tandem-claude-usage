@@ -317,6 +317,8 @@ const LANG_JA = {
   optOwnAlertsTip: 'オフにすると Windows の通知を使います',
   alertTest: 'Tandem からの通知はここに表示されます。',
   alertTestTip: 'テスト通知を表示',
+  loginNoteTitle: 'アカウントごとに一度だけ。数週間有効です。',
+  loginNoteText: 'ここにパスワードが保存されていませんか？ Google か Apple、またはメールアドレスと claude.ai から届くコードでログインできます。ブラウザのログイン状態は各ブラウザだけのものなので、Tandem からは使えません。',
   footer: '非公式ツール — Anthropic とは提携していません。',
 };
 

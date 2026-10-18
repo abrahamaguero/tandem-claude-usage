@@ -119,6 +119,16 @@ button, input, select { font: inherit; }
 #alert-close:hover { background: var(--line); color: var(--text); }
 #alert-tail { position: absolute; bottom: -6px; width: 14px; height: 14px; margin-left: -7px; border-radius: 3px; background: var(--panel); box-shadow: inset -1px -1px 0 0 var(--line); transform: rotate(45deg); }
 
+/* ---------- the line above a sign-in window (login-note.html) ---------- */
+
+.note-page { background: var(--panel); }
+.login-note { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.note-icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: color-mix(in srgb, var(--accent) 16%, var(--raise)); color: var(--accent); }
+.note-icon svg { width: 20px; height: 20px; }
+.note-icon path { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.login-note p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.login-note strong { display: block; margin-bottom: 1px; color: var(--text); font: 700 13px/1.35 var(--display); }
+
 /* ---------- header ---------- */
 
 header { display: flex; align-items: center; gap: 6px; padding: 12px 12px 4px 16px; -webkit-app-region: drag; }

@@ -317,6 +317,8 @@ const LANG_PT_BR = {
   optOwnAlertsTip: 'Desativado: o Tandem usa as notificações do Windows',
   alertTest: 'É aqui que o Tandem vai avisar você.',
   alertTestTip: 'Ver um aviso de teste',
+  loginNoteTitle: 'Uma vez por conta, e dura semanas.',
+  loginNoteText: 'Sem a senha salva aqui? Entre com Google ou Apple, ou com seu e-mail e o código que o claude.ai envia. O Tandem não pode usar o login do seu navegador: cada navegador guarda o seu.',
   footer: 'Ferramenta não oficial — sem vínculo com a Anthropic.',
 };
 
