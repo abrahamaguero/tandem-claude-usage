@@ -6,7 +6,10 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- The ✕ of an alert, and pressing the alert to open Tandem, did nothing: Windows was not passing the
+  press of the mouse to it.
 
 ## [0.6.0] - 2026-10-12
 

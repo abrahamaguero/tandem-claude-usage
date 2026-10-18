@@ -327,8 +327,9 @@ function nextAlert() {
       minimizable: false,
       maximizable: false,
       fullscreenable: false,
-      // Never takes the keyboard from whatever the user is typing in.
-      focusable: false,
+      // It may take the keyboard, though only when pressed: it is shown without it
+      // (showInactive). A window that may never have it gets no press of the mouse from
+      // Windows, only the release, and its buttons cannot be clicked.
       skipTaskbar: true,
       alwaysOnTop: true,
       show: false,

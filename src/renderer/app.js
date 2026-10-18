@@ -247,10 +247,22 @@ function svgEl(tag, attrs = {}, ...children) {
 }
 
 // The shape that decorates the big tiles: eight rounded petals. It sits in its own box,
-// which is what cuts it off at the tile's edge.
+// which is what cuts it off at the tile's edge. It turns and breathes, slowly (style.css).
 function burstEl() {
-  return h('span', { class: 'deco' }, svgEl('svg', { viewBox: '0 0 100 100', class: 'burst' },
-    ...[0, 45, 90, 135].map((turn) => svgEl('rect', { x: 38, y: 2, width: 24, height: 96, rx: 12, transform: `rotate(${turn} 50 50)` }))));
+  return since(h('span', { class: 'deco' }, svgEl('svg', { viewBox: '0 0 100 100', class: 'burst' },
+    ...[0, 45, 90, 135].map((turn) => svgEl('rect', { x: 38, y: 2, width: 24, height: 96, rx: 12, transform: `rotate(${turn} 50 50)` })))));
+}
+
+// The decorations move by a clock of their own: how long the panel has been on screen, all
+// told. Everything is drawn again all the time, and a decoration drawn anew carries on
+// where the one before it was (--since, which the styles take off its animations' start)
+// instead of starting over. While the panel is hidden the clock stops, and they with it.
+let shownFor = 0; // on screen until it was last hidden, in ms
+let shownSince = performance.now(); // when it was last shown; null while hidden
+const decoTime = () => shownFor + (shownSince === null ? 0 : performance.now() - shownSince);
+function since(el) {
+  el.style.setProperty('--since', `${Math.round(decoTime())}ms`);
+  return el;
 }
 
 // Small area chart of the account's main limit over the last hours. The vertical scale
@@ -1062,10 +1074,10 @@ function renderTips() {
   const mine = personalTips();
   const before = places(viewTips);
   setChildren(viewTips,
-    h('div', { class: 'tile tips-hero' },
+    since(h('div', { class: 'tile tips-hero' },
       burstEl(),
       h('div', {}, h('h2', {}, t('tips.hook')), h('p', {}, t('tips.intro'))),
-      pic.icon('bulb')()),
+      pic.icon('bulb')())),
     h('h3', {}, t('tips.now')),
     !mine.length && h('div', { class: 'tile note' }, t('tips.nowNone')),
     mine.map((tip) => h('div', { class: `tile now-tip ${tip.lvl}` },
@@ -1768,6 +1780,9 @@ const RISE = 28;
 let entering = null;
 
 function enter() {
+  // The decorations' clock runs again, and they with it.
+  if (shownSince === null) shownSince = performance.now();
+  document.documentElement.classList.remove('asleep');
   frame.style.opacity = '';
   if (entering) entering.cancel();
   entering = null;
@@ -1806,6 +1821,12 @@ function leave() {
   entering = null;
   if (rise) rise.cancel();
   frame.style.opacity = '0';
+  // Nobody sees the decorations now: they stop, and so does their clock.
+  if (shownSince !== null) {
+    shownFor += performance.now() - shownSince;
+    shownSince = null;
+  }
+  document.documentElement.classList.add('asleep');
   requestAnimationFrame(() => requestAnimationFrame(() => api.left()));
 }
 

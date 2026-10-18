@@ -167,6 +167,22 @@ h3 { margin: 6px 2px 0; color: var(--muted); font-size: 11px; font-weight: 700; 
 .deco { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
 .burst { position: absolute; right: -26px; bottom: -34px; width: 110px; height: 110px; fill: currentColor; opacity: 0.1; }
 
+/* The decorations move, barely: the petals turn once every three minutes and breathe in and
+   out, and the bulb of the tips floats and glows. They go by --since (see since() in app.js),
+   so a decoration drawn again carries on where it was, and stand still while the panel is
+   hidden (.asleep). */
+.burst { animation: burst-turn 180s linear infinite, burst-breathe 8s ease-in-out infinite alternate; animation-delay: calc(var(--since, 0ms) * -1); }
+@keyframes burst-turn { to { rotate: 360deg; } }
+@keyframes burst-breathe { from { scale: 1; opacity: 0.09; } to { scale: 1.09; opacity: 0.15; } }
+.tips-hero .g-icon { animation: bulb-float 6s ease-in-out infinite alternate; animation-delay: calc(var(--since, 0ms) * -1); }
+.tips-hero .g-icon path { animation: bulb-glow 3s ease-in-out infinite alternate; animation-delay: calc(var(--since, 0ms) * -1); }
+@keyframes bulb-float { to { translate: 0 -3px; } }
+@keyframes bulb-glow { from { fill: transparent; } to { fill: color-mix(in srgb, currentColor 16%, transparent); } }
+.asleep .burst, .asleep .tips-hero .g-icon, .asleep .tips-hero .g-icon path { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .burst, .tips-hero .g-icon, .tips-hero .g-icon path { animation: none; }
+}
+
 /* ---------- arrivals ---------- */
 
 /* What has just appeared rises into place, one tile after another: a view that was opened,
