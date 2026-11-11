@@ -8,6 +8,13 @@ touch-ups are left out unless they change how something is used. The format foll
 
 Nothing yet.
 
+## [0.8.0] - 2026-11-11
+
+### Added
+
+- A version for macOS. Tandem lives in the menu bar, and its panel and alerts hang under its icons. It is not
+  signed with an Apple certificate yet: macOS asks to allow it once.
+
 ## [0.7.1] - 2026-11-11
 
 ### Added
@@ -82,7 +89,8 @@ Nothing yet.
 
 First public release.
 
-[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.1...v0.6.2

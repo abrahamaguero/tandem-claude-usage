@@ -1,7 +1,7 @@
 # Tandem — Claude Usage
 
-A small Windows app that lives next to your clock and shows how much of your Claude limits each of your
-accounts has used. When one account runs out in the middle of a Claude Code chat, Tandem helps you carry that
+A small app for Windows and macOS that lives next to your clock and shows how much of your Claude limits
+each of your accounts has used. When one account runs out in the middle of a Claude Code chat, Tandem helps you carry that
 chat over to another.
 
 > **Unofficial.** Tandem is not affiliated with, endorsed by or supported by Anthropic. It reads your own usage
@@ -51,12 +51,28 @@ The pictures show made-up accounts, chats and figures.
 
 ## Install
 
+### Windows
+
 1. Download `Tandem.Setup.x.y.z.exe` from the [latest release](../../releases/latest).
 2. Run it. The installer is not code-signed, so Windows SmartScreen will warn you: choose **More info → Run
    anyway**.
 3. Tandem opens next to the clock. Add an account in Settings and sign in to claude.ai in the window that opens.
 
 Requires Windows 10 or 11 (64-bit). The glass effect needs Windows 11 22H2 or later.
+
+### macOS
+
+1. Download `Tandem-x.y.z-mac.dmg` from the [latest release](../../releases/latest). It runs on Apple Silicon and
+   Intel Macs.
+2. Open it and drag Tandem to Applications.
+3. Open Tandem. It is not signed with an Apple certificate yet, so the first time macOS will not open it: go to
+   **System Settings → Privacy & Security**, find the line about Tandem and choose **Open Anyway**. It asks only
+   once. If macOS says instead that Tandem "is damaged", run `xattr -dr com.apple.quarantine /Applications/Tandem.app`
+   in Terminal and open it again.
+4. Tandem lives in the menu bar, by the clock: click its icon to open it, right-click it for its menu. Add an
+   account in Settings and sign in to claude.ai in the window that opens.
+
+Requires macOS 12 or later. The glass effect is not available on macOS yet.
 
 ## Updates and feedback
 
@@ -91,7 +107,8 @@ Requires Windows 10 or 11 (64-bit). The glass effect needs Windows 11 22H2 or la
 ```bash
 npm install
 npm start        # run from source
-npm run dist     # build the installer into dist/
+npm run dist     # build the Windows installer into dist/
+npm run dist:mac # build the macOS .dmg into dist/ (on a Mac)
 ```
 
 The tests are plain Node scripts:
