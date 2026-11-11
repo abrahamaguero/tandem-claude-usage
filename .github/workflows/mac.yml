@@ -47,8 +47,15 @@ jobs:
       - name: Build the .dmg
         run: npx electron-builder --mac dmg --universal --publish never
         env:
-          # Not signed with an Apple certificate: no looking for one in the keychain.
+          # Not signed with an Apple certificate (identity "-" in package.json: ad hoc).
           CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # Signed ad hoc, as Apple Silicon needs to run it at all: the signature must hold.
+      - name: Check the app's signature
+        run: |
+          codesign --verify --deep --strict --verbose=2 dist/mac-universal/Tandem.app
+          codesign -dv dist/mac-universal/Tandem.app 2>&1 | grep -E "Signature|Identifier|Format"
+          lipo -archs dist/mac-universal/Tandem.app/Contents/MacOS/Tandem
 
       - uses: actions/upload-artifact@v4
         with:

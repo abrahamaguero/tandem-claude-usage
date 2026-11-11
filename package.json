@@ -33,7 +33,7 @@
       "extendInfo": {
         "LSUIElement": true
       },
-      "identity": null,
+      "identity": "-",
       "hardenedRuntime": false,
       "gatekeeperAssess": false
     },
