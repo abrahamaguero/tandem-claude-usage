@@ -62,7 +62,7 @@ await run(`window.__demo = (what) => {
     return [now - (1 - at) * 12 * H, Math.round(pct)];
   });
   Object.assign(a, {
-    label: 'Personal', orgName: 'Max plan', status: 'ok', error: null, extra: null, spark, sessionCount: 3,
+    label: 'Personal', orgName: 'you@example.com', plan: 'max', status: 'ok', error: null, extra: null, spark, sessionCount: 3,
     metrics: [
       { id: 'five_hour', pct: 38, resetsAt: iso(now + 2 * H + 10 * MIN), fullAt: null, pace: { endPct: 71 } },
       { id: 'seven_day', pct: 64, resetsAt: iso(now + 2 * D + 5 * H), fullAt: null, pace: { endPct: 88, perDay: 12 } },
@@ -71,7 +71,7 @@ await run(`window.__demo = (what) => {
     switches: [], fetchedAt: now, lastActivityAt: now - 3 * MIN,
   });
   if (b) Object.assign(b, {
-    label: 'Work', orgName: 'Team plan', status: 'ok', error: null, extra: null, spark: [], sessionCount: 0,
+    label: 'Work', orgName: 'Acme', plan: 'team', status: 'ok', error: null, extra: null, spark: [], sessionCount: 0,
     metrics: [
       { id: 'five_hour', pct: 12, resetsAt: iso(now + 4 * H + 20 * MIN), fullAt: null, pace: null },
       { id: 'seven_day', pct: 81, resetsAt: iso(now + 3 * D + 2 * H), fullAt: null, pace: null },
