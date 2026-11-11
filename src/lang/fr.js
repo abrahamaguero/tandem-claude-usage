@@ -93,6 +93,8 @@ const LANG_FR = {
   notifResetBody: '{metric}\u00a0: limite réinitialisée, maintenant à {pct}\u00a0%.',
   notifPaceTitle: '{label}\u00a0: environ {n} min restantes',
   notifPaceBody: 'Session à {pct}\u00a0%. À ce rythme, elle sera épuisée avant la réinitialisation.',
+  notifWeekTitle: '{label}\u00a0: à ce rythme, la semaine ne suffira pas',
+  notifWeekBody: 'Elle s’épuiserait {when}, avant sa réinitialisation {reset}. {pct}\u00a0% utilisés\u00a0; marge de {perDay}\u00a0% par jour.',
   sessions: 'Sessions actives',
   sessionsNone: 'Aucun chat Claude Code utilisé avec ce compte ces dernières 24 h.',
   helpOwner: 'Chaque chat figure sous le compte qui était actif pendant que tu y travaillais (c’est une estimation\u00a0; un chat utilisé avec les deux figure sous les deux).',

@@ -6,6 +6,10 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.7.0] - 2026-11-11
+
 ### Changed
 
 - Tandem follows the new way claude.ai reports limits. An account with no 5-hour limit (a verified Ultra
@@ -17,6 +21,8 @@ touch-ups are left out unless they change how something is used. The format foll
 - Limits of the week for one model, such as Fable's, with how much of the week it may take.
 - Where the week went: the share of Claude Code, chats and Cowork, when claude.ai reports it.
 - Extra usage that is turned off says so.
+- An alert when the week of the account in use will not last until it resets at its pace so far: when it
+  would run out, and how much a day would still make it. Once a week, and only once the week is a day old.
 
 ## [0.6.2] - 2026-10-18
 
@@ -66,7 +72,8 @@ touch-ups are left out unless they change how something is used. The format foll
 
 First public release.
 
-[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.5.1...v0.6.0

@@ -4,7 +4,7 @@ const os = require('os');
 const fs = require('fs');
 const crypto = require('crypto');
 const { translate, languages } = require('./i18n');
-const { extractMetrics, extractBreakdown } = require('./limits');
+const { extractMetrics, extractBreakdown, weekRunsOut } = require('./limits');
 const { buildHandoff, listSessions } = require('./handoff');
 const { appSessions, chatSetup } = require('./claude-app');
 const { createHistory, projectFull, recentRate, downsample, tokenStats, contextOf, modelName } = require('./insights');
@@ -552,6 +552,7 @@ async function refreshAll() {
     const state = pushState();
     notifyHandoff(state);
     notifyProjection(state);
+    notifyWeekPace(state);
     notifyContext();
   } catch (err) {
     console.error('[notify]', err.message);
@@ -711,6 +712,32 @@ function notifyProjection(state) {
     meters: limitMeters(active.metrics),
     title: t('notifPaceTitle', { label: active.label, n: Math.max(minutes, 1) }),
     body: t('notifPaceBody', { pct: metric.pct }),
+  });
+  notification.on('click', showWindow);
+  notification.show();
+}
+
+// Warns once a week when the account in use will not make it to the reset at its pace so
+// far. On an account with no session limit it is the only warning before it runs out. It
+// is remembered in the config, so starting Tandem again does not say it twice.
+function notifyWeekPace(state) {
+  if (!config.settings.alerts) return;
+  const active = state.accounts.find((a) => a.key === state.activeKey);
+  const metric = active && active.metrics.find((m) => m.id === 'seven_day');
+  const out = weekRunsOut(metric);
+  if (!out) return;
+  const told = config.weekTold && typeof config.weekTold === 'object' ? config.weekTold : {};
+  if (told[active.key] === metric.resetsAt) return;
+  config.weekTold = { ...told, [active.key]: metric.resetsAt };
+  saveConfig();
+  // A day of the week and an hour, as the language writes them: "Thu 3:00 PM".
+  const day = (ms) => new Date(ms).toLocaleString(config.settings.language, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  const notification = createNotification({
+    kind: 'hourglass',
+    level: 'warn',
+    meters: limitMeters(active.metrics),
+    title: t('notifWeekTitle', { label: active.label }),
+    body: t('notifWeekBody', { when: day(out.fullAt), reset: day(out.resets), pct: out.pct, perDay: out.perDay }),
   });
   notification.on('click', showWindow);
   notification.show();

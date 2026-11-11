@@ -94,6 +94,8 @@ const LANG_EN = {
   notifResetBody: '{metric} has reset and is now at {pct}%.',
   notifPaceTitle: '{label}: about {n} min left',
   notifPaceBody: 'Session at {pct}%. At the current pace it runs out before it resets.',
+  notifWeekTitle: '{label}: your week won\'t last at this pace',
+  notifWeekBody: 'It would run out {when}, before it resets {reset}. {pct}% used so far; room for {perDay}% a day.',
   sessions: 'Active sessions',
   sessionsNone: 'No Claude Code chats were used with this account in the last 24 h.',
   helpOwner: 'Each chat is listed under the account that was in use while you worked on it (an estimate; a chat used with both appears under both).',

@@ -93,6 +93,8 @@ const LANG_ES = {
   notifResetBody: '{metric} se reinició y ahora está al {pct}%.',
   notifPaceTitle: '{label}: quedan unos {n} min',
   notifPaceBody: 'Sesión al {pct}%. Al ritmo actual se agota antes de reiniciarse.',
+  notifWeekTitle: '{label}: a este ritmo no te llega la semana',
+  notifWeekBody: 'Se acabaría el {when}, antes de reiniciarse el {reset}. Llevas {pct}%; margen de {perDay}% al día.',
   sessions: 'Sesiones activas',
   sessionsNone: 'No se usó ningún chat de Claude Code con esta cuenta en las últimas 24 h.',
   helpOwner: 'Cada chat aparece bajo la cuenta que estaba en uso mientras trabajabas en él (es una estimación; un chat usado con las dos aparece en ambas).',

@@ -58,4 +58,20 @@ function extractBreakdown(json) {
   return rows.some((row) => row.pct > 0) ? { rows } : null;
 }
 
-module.exports = { extractMetrics, extractBreakdown, METRIC_ORDER, LIMIT_IDS };
+const DAY = 24 * 3600 * 1000;
+const WEEK = 7 * DAY;
+
+// Whether an account's week will not last at its pace so far, given its weekly limit with
+// the pace main.js works out for it: when it would run out, when it resets, how much is
+// used and how much a day would still make it. Only once the week is a day old, when its
+// average means something.
+function weekRunsOut(metric, now = Date.now()) {
+  if (!metric || metric.id !== 'seven_day' || !metric.pace || !metric.pace.fullAt || !metric.resetsAt) return null;
+  const resets = new Date(metric.resetsAt).getTime();
+  if (!(WEEK - (resets - now) >= DAY)) return null;
+  const { fullAt, perDay } = metric.pace;
+  if (fullAt <= now || fullAt >= resets) return null;
+  return { fullAt, resets, pct: metric.pct, perDay };
+}
+
+module.exports = { extractMetrics, extractBreakdown, weekRunsOut, METRIC_ORDER, LIMIT_IDS };

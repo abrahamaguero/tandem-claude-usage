@@ -93,6 +93,8 @@ const LANG_JA = {
   notifResetBody: '{metric}がリセットされ、現在 {pct}% です。',
   notifPaceTitle: '{label}：残り約 {n} 分',
   notifPaceBody: 'セッションは {pct}% です。今のペースだと、リセット前に使い切ります。',
+  notifWeekTitle: '{label}：このペースでは週の上限が持ちません',
+  notifWeekBody: '{when} に上限に達し、リセット（{reset}）に間に合いません。現在 {pct}%、1 日あたりの目安は {perDay}% です。',
   sessions: 'アクティブなセッション',
   sessionsNone: '過去 24 時間に、このアカウントで使った Claude Code のチャットはありません。',
   helpOwner: '各チャットは、作業していたときに使用中だったアカウントの下に並びます（推定です。両方で使ったチャットは両方に出ます）。',

@@ -2,7 +2,7 @@
 // had since November 2026 and in the older one. The figures are made up.
 // Run with: node tools/limits-test.js
 const assert = require('assert');
-const { extractMetrics, extractBreakdown } = require('../src/limits');
+const { extractMetrics, extractBreakdown, weekRunsOut } = require('../src/limits');
 
 const field = (utilization, resets) => ({ utilization, resets_at: resets, limit_dollars: null, used_dollars: null, remaining_dollars: null, locked_reason: null });
 const limit = (kind, percent, resets, scope = null) => ({ kind, group: kind === 'session' ? 'session' : 'weekly', percent, severity: 'normal', resets_at: resets, scope, is_active: false });
@@ -53,5 +53,17 @@ assert.deepStrictEqual(extractMetrics({ seven_day: field(40, 'W'), five_hour: fi
 assert.deepStrictEqual(extractMetrics({ limits: [null, 'x', { kind: 'session' }, limit('weekly_all', 9.6, 'W')] }), [{ id: 'seven_day', pct: 10, resetsAt: 'W' }]);
 assert.deepStrictEqual(extractMetrics(null), []);
 assert.strictEqual(extractBreakdown({ seven_day_breakdown: { rows: [{ key: 'chat', percent: 0 }] } }), null);
+
+// The week that will not last: told only once a day of it has gone by, and only when the
+// pace runs it out before it resets.
+const H = 3600 * 1000;
+const now = Date.parse('2026-11-12T12:00:00Z');
+const week = (hoursLeft, fullIn, pct = 60) => ({ id: 'seven_day', pct, resetsAt: new Date(now + hoursLeft * H).toISOString(), pace: { endPct: 120, perDay: 9, fullAt: fullIn == null ? null : now + fullIn * H } });
+assert.deepStrictEqual(weekRunsOut(week(96, 30), now), { fullAt: now + 30 * H, resets: now + 96 * H, pct: 60, perDay: 9 });
+assert.strictEqual(weekRunsOut(week(150, 30), now), null, 'the week is less than a day old');
+assert.strictEqual(weekRunsOut(week(96, null), now), null, 'it lasts');
+assert.strictEqual(weekRunsOut(week(96, 100), now), null, 'it would run out after the reset');
+assert.strictEqual(weekRunsOut({ ...week(96, 30), id: 'five_hour' }, now), null, 'only the week');
+assert.strictEqual(weekRunsOut(undefined, now), null);
 
 console.log('limits.js: all cases passed');
