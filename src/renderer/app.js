@@ -439,6 +439,10 @@ function chipsEl(a) {
   return h('span', { class: 'chips' }, chip(session, false, '5h'), chip(weekly, true, '7d'));
 }
 
+// The plans by their own names, which are not translated; the free one is.
+const PLANS = { ultra: 'Ultra', max: 'Max', pro: 'Pro', team: 'Team', enterprise: 'Enterprise' };
+const planName = (plan) => PLANS[plan] || (plan === 'free' ? t('plan.free') : plan);
+
 // Who the account is: its rings, its name and organization, and whether Claude is on it
 // right now. The same pieces head an open account and make up a closed one.
 function identityEl(a, active) {
@@ -451,7 +455,7 @@ function identityEl(a, active) {
           class: 'rename', title: t('rename'),
           onclick: (e) => { e.stopPropagation(); startRename(a.key); },
         }, '✎')),
-      a.orgName && h('span', { class: 'org' }, a.orgName)),
+      a.orgName && h('span', { class: 'org' }, a.plan && h('b', { class: 'plan' }, planName(a.plan)), a.orgName)),
     active && h('span', { class: 'now' }, t('active')),
   ];
 }

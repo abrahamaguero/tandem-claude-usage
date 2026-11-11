@@ -330,6 +330,7 @@ const LANG_EN = {
   'surface.chat': 'Chats',
   'surface.other': 'Other',
   extraOff: 'Off: turn it on at claude.ai to keep going past your limits',
+  'plan.free': 'Free',
   footer: 'Unofficial tool — not affiliated with Anthropic.',
 };
 

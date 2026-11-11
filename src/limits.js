@@ -58,6 +58,32 @@ function extractBreakdown(json) {
   return rows.some((row) => row.pct > 0) ? { rows } : null;
 }
 
+// The plan of an organization, from what claude.ai says about it: 'ultra', 'max', 'pro',
+// 'team', 'enterprise' or 'free', the label claude.ai gives it when it gives one, or null.
+// Since November 2026 the plan once called Max 20x is Ultra, and Max 5x is just Max.
+function planOf(org) {
+  if (!org || typeof org !== 'object') return null;
+  const label = typeof org.plan_display_label === 'string' ? org.plan_display_label.trim() : '';
+  if (label) return label.slice(0, 24);
+  const caps = Array.isArray(org.capabilities) ? org.capabilities : [];
+  const tier = `${org.rate_limit_tier || ''} ${org.analytics_subscription_plan || ''}`.toLowerCase();
+  if (org.raven_type === 'enterprise' || caps.includes('enterprise')) return 'enterprise';
+  if (org.raven_type || caps.includes('raven')) return 'team';
+  if (/ultra|20x/.test(tier)) return 'ultra';
+  if (caps.includes('claude_max') || /max/.test(tier)) return 'max';
+  if (caps.includes('claude_pro') || /claude_pro/.test(tier)) return 'pro';
+  if (caps.includes('chat')) return 'free';
+  return null;
+}
+
+// The name to show for an organization. claude.ai gives a personal account an organization
+// named "<its email>'s Organization": that is the account itself, so only the email is shown.
+function orgLabel(name) {
+  const text = String(name || '');
+  const own = /^(.+?)['’]s Organization$/.exec(text);
+  return own ? own[1] : text;
+}
+
 const DAY = 24 * 3600 * 1000;
 const WEEK = 7 * DAY;
 
@@ -74,4 +100,4 @@ function weekRunsOut(metric, now = Date.now()) {
   return { fullAt, resets, pct: metric.pct, perDay };
 }
 
-module.exports = { extractMetrics, extractBreakdown, weekRunsOut, METRIC_ORDER, LIMIT_IDS };
+module.exports = { extractMetrics, extractBreakdown, weekRunsOut, planOf, orgLabel, METRIC_ORDER, LIMIT_IDS };

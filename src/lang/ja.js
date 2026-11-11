@@ -329,6 +329,7 @@ const LANG_JA = {
   'surface.chat': 'チャット',
   'surface.other': 'その他',
   extraOff: 'オフ：claude.ai でオンにすると上限を超えても使えます',
+  'plan.free': '無料',
   footer: '非公式ツール — Anthropic とは提携していません。',
 };
 

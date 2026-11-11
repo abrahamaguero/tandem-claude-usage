@@ -329,6 +329,7 @@ const LANG_ES = {
   'surface.chat': 'Chats',
   'surface.other': 'Otros',
   extraOff: 'Apagado: actívalo en claude.ai para seguir al llegar a los límites',
+  'plan.free': 'Gratis',
   footer: 'Herramienta no oficial, sin relación con Anthropic.',
 };
 

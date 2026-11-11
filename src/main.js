@@ -4,7 +4,7 @@ const os = require('os');
 const fs = require('fs');
 const crypto = require('crypto');
 const { translate, languages } = require('./i18n');
-const { extractMetrics, extractBreakdown, weekRunsOut } = require('./limits');
+const { extractMetrics, extractBreakdown, weekRunsOut, planOf, orgLabel } = require('./limits');
 const { buildHandoff, listSessions } = require('./handoff');
 const { appSessions, chatSetup } = require('./claude-app');
 const { createHistory, projectFull, recentRate, downsample, tokenStats, contextOf, modelName } = require('./insights');
@@ -209,7 +209,7 @@ async function loadOrgs(profile) {
   const chatOrgs = json.filter((o) => (o.capabilities || []).some((c) => c !== 'api'));
   const orgs = (chatOrgs.length ? chatOrgs : json).map((o) => {
     const known = profile.orgs.find((k) => k.uuid === o.uuid);
-    return { uuid: o.uuid, name: o.name || t('orgDefault'), enabled: known ? known.enabled : true, alias: known ? known.alias : '', color: known ? known.color : null, removed: known ? !!known.removed : false };
+    return { uuid: o.uuid, name: o.name || t('orgDefault'), plan: planOf(o), enabled: known ? known.enabled : true, alias: known ? known.alias : '', color: known ? known.color : null, removed: known ? !!known.removed : false };
   });
   profile.orgs = orgs;
   saveConfig();
@@ -513,7 +513,7 @@ function recordSample(key, profile, org, metrics) {
         level: level === 2 ? 'crit' : 'warn',
         meters: limitMeters(metrics, m),
         title: t('notifTitle', { label: org.alias || profile.label, metric: metricName(m), pct: m.pct }),
-        body: t('notifBody', { org: org.name, threshold: level === 2 ? config.settings.critAt : config.settings.warnAt }),
+        body: t('notifBody', { org: orgLabel(org.name), threshold: level === 2 ? config.settings.critAt : config.settings.warnAt }),
       }).show();
     }
   }
@@ -613,7 +613,8 @@ function buildAccounts() {
         profileId: profile.id,
         label: org.alias || profile.label,
         color: org.color || autoColor,
-        orgName: org.name,
+        orgName: orgLabel(org.name),
+        plan: org.plan || null,
         status: !data ? 'loading' : data.error && !data.metrics.length ? 'error' : 'ok',
         error: data ? data.error : null,
         metrics: data ? data.metrics.map((m) => ({ ...m, fullAt: projection(key, m), pace: pace(key, m) })) : [],
@@ -1017,7 +1018,7 @@ function buildState() {
       label: p.label,
       color: colorOf(p),
       status: profileStatus.get(p.id) || 'loading',
-      orgs: p.orgs.filter((o) => !o.removed),
+      orgs: p.orgs.filter((o) => !o.removed).map((o) => ({ ...o, name: orgLabel(o.name) })),
     })),
     version: app.getVersion(),
     glassOk: GLASS_OK,

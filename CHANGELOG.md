@@ -6,7 +6,13 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- The plan of each account (Pro, Max, Ultra, Team…) next to its name.
+
+### Changed
+
+- A personal account shows its email instead of the "…'s Organization" name claude.ai gives it.
 
 ## [0.7.0] - 2026-11-11
 

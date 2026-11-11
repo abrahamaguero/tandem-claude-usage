@@ -2,7 +2,7 @@
 // had since November 2026 and in the older one. The figures are made up.
 // Run with: node tools/limits-test.js
 const assert = require('assert');
-const { extractMetrics, extractBreakdown, weekRunsOut } = require('../src/limits');
+const { extractMetrics, extractBreakdown, weekRunsOut, planOf, orgLabel } = require('../src/limits');
 
 const field = (utilization, resets) => ({ utilization, resets_at: resets, limit_dollars: null, used_dollars: null, remaining_dollars: null, locked_reason: null });
 const limit = (kind, percent, resets, scope = null) => ({ kind, group: kind === 'session' ? 'session' : 'weekly', percent, severity: 'normal', resets_at: resets, scope, is_active: false });
@@ -65,5 +65,22 @@ assert.strictEqual(weekRunsOut(week(96, null), now), null, 'it lasts');
 assert.strictEqual(weekRunsOut(week(96, 100), now), null, 'it would run out after the reset');
 assert.strictEqual(weekRunsOut({ ...week(96, 30), id: 'five_hour' }, now), null, 'only the week');
 assert.strictEqual(weekRunsOut(undefined, now), null);
+
+// The plan of an organization, by what claude.ai says of it.
+assert.strictEqual(planOf({ capabilities: ['claude_max', 'chat'], rate_limit_tier: 'default_claude_max_20x', analytics_subscription_plan: 'claude_max 20x' }), 'ultra');
+assert.strictEqual(planOf({ capabilities: ['claude_max', 'chat'], rate_limit_tier: 'default_claude_max_5x' }), 'max');
+assert.strictEqual(planOf({ capabilities: ['claude_pro', 'chat'], rate_limit_tier: 'default_claude_ai' }), 'pro');
+assert.strictEqual(planOf({ capabilities: ['raven', 'chat'], rate_limit_tier: 'default_raven', raven_type: 'team' }), 'team');
+assert.strictEqual(planOf({ capabilities: ['raven', 'chat'], raven_type: 'enterprise' }), 'enterprise');
+assert.strictEqual(planOf({ capabilities: ['chat'], rate_limit_tier: 'default_claude_ai' }), 'free');
+assert.strictEqual(planOf({ capabilities: ['chat'], plan_display_label: ' Ultra ' }), 'Ultra');
+assert.strictEqual(planOf({ capabilities: ['api'], billing_type: 'prepaid' }), null);
+assert.strictEqual(planOf(null), null);
+
+// A personal account's organization is shown as the account: its email.
+assert.strictEqual(orgLabel("someone@example.com's Organization"), 'someone@example.com');
+assert.strictEqual(orgLabel('someone@example.com’s Organization'), 'someone@example.com');
+assert.strictEqual(orgLabel('Acme'), 'Acme');
+assert.strictEqual(orgLabel(null), '');
 
 console.log('limits.js: all cases passed');
