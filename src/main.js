@@ -4,6 +4,7 @@ const os = require('os');
 const fs = require('fs');
 const crypto = require('crypto');
 const { translate, languages } = require('./i18n');
+const { extractMetrics, extractBreakdown } = require('./limits');
 const { buildHandoff, listSessions } = require('./handoff');
 const { appSessions, chatSetup } = require('./claude-app');
 const { createHistory, projectFull, recentRate, downsample, tokenStats, contextOf, modelName } = require('./insights');
@@ -15,7 +16,6 @@ const BASE = 'https://claude.ai';
 const CLAUDE_JSON = path.join(os.homedir(), '.claude.json');
 const WIDTH = 460;
 const COLORS = ['#e91e8c', '#00a0b0', '#d4ff00', '#ffffff'];
-const METRIC_ORDER = ['five_hour', 'seven_day', 'seven_day_opus', 'seven_day_sonnet', 'seven_day_oauth_apps', 'extra_usage'];
 const DEFAULT_SETTINGS = {
   autoSwitch: true,
   launchAtStartup: true,
@@ -216,20 +216,9 @@ async function loadOrgs(profile) {
   return 'ok';
 }
 
-function extractMetrics(json) {
-  const metrics = [];
-  for (const [id, value] of Object.entries(json || {})) {
-    if (value && typeof value === 'object' && typeof value.utilization === 'number') {
-      metrics.push({
-        id,
-        pct: Math.round(value.utilization),
-        resetsAt: value.resets_at || null,
-      });
-    }
-  }
-  const rank = (m) => (METRIC_ORDER.includes(m.id) ? METRIC_ORDER.indexOf(m.id) : METRIC_ORDER.length);
-  return metrics.sort((a, b) => rank(a) - rank(b));
-}
+// What a limit is called: its own name, or the week's with the model or product it is
+// scoped to.
+const metricName = (m) => (m.scope ? `${t('metric.seven_day')} · ${m.scope}` : t(`metric.${m.id}`));
 
 async function refreshProfile(profile) {
   if (!(await hasSession(profile))) {
@@ -253,7 +242,7 @@ async function refreshProfile(profile) {
       const metrics = extractMetrics(json);
       recordSample(key, profile, org, metrics);
       history.add(key, metrics);
-      usage.set(key, { metrics, extra: json.extra_usage || null, fetchedAt: Date.now(), error: null });
+      usage.set(key, { metrics, extra: json.extra_usage || null, breakdown: extractBreakdown(json), fetchedAt: Date.now(), error: null });
     } catch (err) {
       usage.set(key, { ...(usage.get(key) || { metrics: [] }), error: err.message });
     }
@@ -485,7 +474,7 @@ function limitMeters(metrics, also) {
     return m ? [{ tag, pct: m.pct }] : [];
   };
   const rows = [...row('five_hour', '5h'), ...row('seven_day', '7d')];
-  if (also && !['five_hour', 'seven_day'].includes(also.id)) rows.push({ tag: t(`metric.${also.id}`), pct: also.pct });
+  if (also && !['five_hour', 'seven_day'].includes(also.id)) rows.push({ tag: metricName(also), pct: also.pct });
   return rows;
 }
 
@@ -515,7 +504,7 @@ function recordSample(key, profile, org, metrics) {
         level: 'low',
         meters: limitMeters(metrics, m),
         title: t('notifResetTitle', { label: org.alias || profile.label }),
-        body: t('notifResetBody', { metric: t(`metric.${m.id}`), pct: m.pct }),
+        body: t('notifResetBody', { metric: metricName(m), pct: m.pct }),
       }).show();
     }
     if (before !== undefined && level > before && !handoffCase) {
@@ -523,7 +512,7 @@ function recordSample(key, profile, org, metrics) {
         kind: 'gauge',
         level: level === 2 ? 'crit' : 'warn',
         meters: limitMeters(metrics, m),
-        title: t('notifTitle', { label: org.alias || profile.label, metric: t(`metric.${m.id}`), pct: m.pct }),
+        title: t('notifTitle', { label: org.alias || profile.label, metric: metricName(m), pct: m.pct }),
         body: t('notifBody', { org: org.name, threshold: level === 2 ? config.settings.critAt : config.settings.warnAt }),
       }).show();
     }
@@ -628,6 +617,7 @@ function buildAccounts() {
         error: data ? data.error : null,
         metrics: data ? data.metrics.map((m) => ({ ...m, fullAt: projection(key, m), pace: pace(key, m) })) : [],
         extra: data ? data.extra : null,
+        breakdown: data ? data.breakdown || null : null,
         spark: sparkline(key, data),
         sessionCount: sessionRows.filter((row) => ownsSession(key, row)).length,
         stats: stats.byAccount[key] || { total: 0, projects: [], models: [] },
@@ -728,7 +718,7 @@ function notifyProjection(state) {
 
 // Share of the tightest limit already used; extra usage is paid overflow, not a limit.
 function usedPct(account) {
-  return Math.max(0, ...account.metrics.filter((m) => m.id !== 'extra_usage').map((m) => m.pct));
+  return Math.max(0, ...account.metrics.filter((m) => m.id !== 'extra_usage' && !m.scope).map((m) => m.pct));
 }
 
 // When the active account is nearly out, point at the account with the most room left.
@@ -736,7 +726,7 @@ function findHandoff(accounts, activeKey) {
   const usable = accounts.filter((a) => a.status === 'ok' && a.metrics.length);
   const from = usable.find((a) => a.key === activeKey);
   if (!from || usedPct(from) < config.settings.critAt) return null;
-  const metric = from.metrics.find((m) => m.id !== 'extra_usage' && m.pct === usedPct(from));
+  const metric = from.metrics.find((m) => m.id !== 'extra_usage' && !m.scope && m.pct === usedPct(from));
   const to = usable
     .filter((a) => a.key !== activeKey && usedPct(a) < config.settings.warnAt)
     .sort((a, b) => usedPct(a) - usedPct(b))[0];
@@ -744,6 +734,7 @@ function findHandoff(accounts, activeKey) {
     fromKey: from.key,
     fromLabel: from.label,
     metricId: metric.id,
+    metricName: metricName(metric),
     pct: metric.pct,
     toKey: to ? to.key : null,
     toLabel: to ? to.label : null,
@@ -764,7 +755,7 @@ function notifyHandoff(state) {
     level: 'crit',
     // The account that ran out and, when there is one, the one with room.
     meters: [{ tag: handoff.fromLabel, pct: handoff.pct }, ...(handoff.toKey ? [{ tag: handoff.toLabel, pct: handoff.toPct }] : [])],
-    title: t('handoffTitle', { label: handoff.fromLabel, metric: t(`metric.${handoff.metricId}`), pct: handoff.pct }),
+    title: t('handoffTitle', { label: handoff.fromLabel, metric: handoff.metricName, pct: handoff.pct }),
     body: handoff.toKey ? t('handoffAlt', { label: handoff.toLabel, pct: handoff.toPct }) : t('handoffNone'),
   });
   notification.on('click', showWindow);

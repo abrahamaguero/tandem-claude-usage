@@ -14,8 +14,10 @@ chat over to another.
 
 ## What it does
 
-- **Every account at a glance.** One block of tiles per account: the 5-hour session and the weekly limit as
-  big numbers, any extra usage, when each resets, and where each is heading at your current pace. Each goes
+- **Every account at a glance.** One block of tiles per account: the 5-hour session (where the plan still
+  has one), the weekly limit and any limit of one model (like Fable's) as big numbers, any extra usage, when
+  each resets, where each is heading at your current pace, and where the week went: Claude Code, chats,
+  Cowork. Each goes
   from green to blue, orange and red as it is used up.
 - **Knows which account is in use.** It finds the account your Claude apps are on right now and shows it in
   two small icons next to the clock: one for the session, one for the week.

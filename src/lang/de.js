@@ -5,6 +5,7 @@ const LANG_DE = {
   'metric.seven_day_opus': 'Woche · Opus',
   'metric.seven_day_sonnet': 'Woche · Sonnet',
   'metric.seven_day_oauth_apps': 'Woche · Apps',
+  'metric.seven_day_cowork': 'Woche · Cowork',
   'metric.extra_usage': 'Extra-Nutzung',
   errUnexpected: 'Unerwartete Antwort ({status})',
   errNoUsage: 'Keine Nutzungsdaten ({status})',
@@ -319,6 +320,13 @@ const LANG_DE = {
   alertTestTip: 'Beispielhinweis anzeigen',
   loginNoteTitle: 'Einmal pro Konto, und es hält wochenlang.',
   loginNoteText: 'Kein gespeichertes Passwort hier? Melde dich mit Google oder Apple an oder mit deiner E-Mail und dem Code, den dir claude.ai schickt. Tandem kann die Anmeldung deines Browsers nicht nutzen: Jeder Browser behält seine eigene.',
+  noSessionLimit: 'Kein 5-Stunden-Limit für dieses Konto',
+  scopedShare: 'Darf bis zu {allowance}% der Woche nutzen · bisher {used}%',
+  breakdownTitle: 'Wohin die Woche ging',
+  breakdownTip: 'Anteil an der Nutzung dieser Woche nach Produkt, laut claude.ai',
+  'surface.chat': 'Chats',
+  'surface.other': 'Sonstiges',
+  extraOff: 'Aus: in claude.ai einschalten, um über die Limits hinaus weiterzumachen',
   footer: 'Inoffizielles Tool — keine Verbindung zu Anthropic.',
 };
 

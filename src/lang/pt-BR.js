@@ -5,6 +5,7 @@ const LANG_PT_BR = {
   'metric.seven_day_opus': 'Semanal · Opus',
   'metric.seven_day_sonnet': 'Semanal · Sonnet',
   'metric.seven_day_oauth_apps': 'Semanal · Apps',
+  'metric.seven_day_cowork': 'Semanal · Cowork',
   'metric.extra_usage': 'Uso extra',
   errUnexpected: 'Resposta inesperada ({status})',
   errNoUsage: 'Sem dados de uso ({status})',
@@ -319,6 +320,13 @@ const LANG_PT_BR = {
   alertTestTip: 'Ver um aviso de teste',
   loginNoteTitle: 'Uma vez por conta, e dura semanas.',
   loginNoteText: 'Sem a senha salva aqui? Entre com Google ou Apple, ou com seu e-mail e o código que o claude.ai envia. O Tandem não pode usar o login do seu navegador: cada navegador guarda o seu.',
+  noSessionLimit: 'Esta conta não tem limite de 5 horas',
+  scopedShare: 'Pode usar até {allowance}% da semana · {used}% até agora',
+  breakdownTitle: 'Para onde foi a semana',
+  breakdownTip: 'Parte do uso desta semana por produto, segundo o claude.ai',
+  'surface.chat': 'Chats',
+  'surface.other': 'Outros',
+  extraOff: 'Desativado: ative no claude.ai para continuar depois dos limites',
   footer: 'Ferramenta não oficial — sem vínculo com a Anthropic.',
 };
 

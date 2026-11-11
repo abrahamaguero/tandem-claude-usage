@@ -211,18 +211,62 @@ function money(amount, extra) {
 
 // One limit as a tile: its name, how much is used in big, the bar, and when it resets.
 // `wide` makes it span the row, for the one left over when the limits are an odd number.
+// What a limit is called: its own name, or the week's with the model or product it is
+// scoped to.
+const metricName = (m) => (m.scope ? `${t('metric.seven_day')} · ${m.scope}` : t(`metric.${m.id}`));
+
+// The session and weekly limits of an account. An account with neither (an organization
+// whose limits are of other kinds) has its first two stand in for them; one with a week
+// and no session, as a verified Ultra one, has no session at all.
+function mainLimits(a) {
+  const session = a.metrics.find((m) => m.id === 'five_hour');
+  const weekly = a.metrics.find((m) => m.id === 'seven_day');
+  return session || weekly ? { session, weekly } : { session: a.metrics[0], weekly: a.metrics[1] };
+}
+const noSessionLimit = (a) => a.metrics.some((m) => m.id === 'seven_day') && !a.metrics.some((m) => m.id === 'five_hour');
+
+// Where the session limit would be, for an account that has none.
+function freeSessionEl() {
+  return h('div', { class: 'tile metric free' },
+    h('div', { class: 'metric-label' }, t('metric.five_hour')),
+    h('div', { class: 'metric-value' }, '∞'),
+    h('div', { class: 'metric-reset' }, t('noSessionLimit')));
+}
+
+// Where the week went, by product: one bar in parts and what each part is.
+const SURFACE_COLORS = { claude_code: 'var(--accent)', cowork: 'var(--pop)', chat: 'var(--ok)' };
+function breakdownEl(a) {
+  const rows = a.breakdown ? a.breakdown.rows.filter((row) => row.pct > 0) : [];
+  if (!rows.length) return null;
+  const name = (row) => (['chat', 'other'].includes(row.key) ? t(`surface.${row.key}`) : row.name);
+  const color = (row) => SURFACE_COLORS[row.key] || 'var(--muted)';
+  return h('div', { class: 'tile wide breakdown', title: t('breakdownTip') },
+    h('div', { class: 'metric-label' }, t('breakdownTitle')),
+    h('div', { class: 'breakdown-bar' }, rows.map((row) => {
+      const part = h('i', { color: color(row), title: `${name(row)}: ${row.pct}%` });
+      part.style.flex = `${row.pct} 1 0`;
+      return part;
+    })),
+    h('div', { class: 'breakdown-legend' }, rows.map((row) => h('span', { color: color(row) }, name(row), h('b', {}, `${row.pct}%`)))));
+}
+
 function metricEl(m, a, wide) {
   const fill = h('div');
   fill.style.width = `${Math.min(m.pct, 100)}%`;
   const extra = m.id === 'extra_usage' && a.extra && typeof a.extra.used_credits === 'number' && a.extra.monthly_limit;
   const lvl = level(m.pct);
-  return h('div', { class: `tile metric ${lvl} ${wide ? 'wide' : ''}` },
-    h('div', { class: 'metric-label' }, t(`metric.${m.id}`)),
+  // Extra usage that is turned off would not carry on past the limits: it says so.
+  const off = extra && a.extra.is_enabled === false;
+  return h('div', { class: `tile metric ${lvl} ${wide ? 'wide' : ''} ${off ? 'off' : ''}` },
+    h('div', { class: 'metric-label' }, metricName(m)),
     extra
       ? h('div', { class: 'metric-value long' }, `${money(a.extra.used_credits, a.extra)} / ${money(a.extra.monthly_limit, a.extra)}`)
       : h('div', { class: 'metric-value' }, String(m.pct), h('small', {}, '%')),
     h('div', { class: `bar ${lvl}` }, fill),
+    off && h('div', { class: 'pace calm' }, t('extraOff')),
     m.resetsAt && h('div', { class: 'metric-reset' }, `${untilReset(m.resetsAt)} · ${clock(m.resetsAt)}`),
+    // A limit scoped to one model may take only part of the week.
+    m.share && h('div', { class: 'pace calm' }, t('scopedShare', m.share)),
     paceEl(m));
 }
 
@@ -295,7 +339,7 @@ function sparkEl(a) {
   const mins = Math.round(span / 60000);
   return h('div', { class: 'tile chart', title: t('sparkTip') },
     h('div', { class: 'chart-row' },
-      h('span', {}, t('sparkCaption', { metric: t(`metric.${a.metrics[0].id}`), span: mins < 90 ? `${mins} min` : `${Math.round(mins / 60)} h` })),
+      h('span', {}, t('sparkCaption', { metric: metricName(a.metrics[0]), span: mins < 90 ? `${mins} min` : `${Math.round(mins / 60)} h` })),
       h('span', {}, `${top}%`)),
     h('div', { class: 'chart-plot' }, svg, dot),
     h('div', { class: 'chart-row' }, h('span', {}, clock(t0)), h('span', {}, t('now', { pct: last }))));
@@ -351,8 +395,8 @@ function startRename(key) {
 // the week, each filled by how much is used. They are drawn in one ink, to sit on the
 // account's color; the color of the level is on the tile of each limit.
 function ringsEl(a) {
-  const session = a.metrics.find((m) => m.id === 'five_hour') || a.metrics[0];
-  const weekly = a.metrics.find((m) => m.id === 'seven_day') || a.metrics[1];
+  const { session, weekly } = mainLimits(a);
+  const free = noSessionLimit(a);
   const svg = document.createElementNS(SVG, 'svg');
   svg.setAttribute('viewBox', '0 0 44 44');
   svg.setAttribute('class', 'rings');
@@ -366,7 +410,8 @@ function ringsEl(a) {
     return el;
   };
   const ring = (metric, r) => {
-    circle(r, 'ring-track');
+    // With no session limit, its ring is dotted all round: nothing to fill.
+    circle(r, free && r > 15 ? 'ring-track free' : 'ring-track');
     if (!metric || metric.pct <= 0) return;
     const length = 2 * Math.PI * r;
     const arc = circle(r, 'ring-arc');
@@ -377,7 +422,7 @@ function ringsEl(a) {
   ring(weekly, 11);
   circle(3.5, 'ring-dot');
   const title = document.createElementNS(SVG, 'title');
-  title.textContent = [session, weekly].filter(Boolean).map((m) => `${t(`metric.${m.id}`)}: ${m.pct}%`).join(' · ');
+  title.textContent = [free && `${t('metric.five_hour')}: ${t('noSessionLimit')}`, ...[session, weekly].filter(Boolean).map((m) => `${metricName(m)}: ${m.pct}%`)].filter(Boolean).join(' · ');
   svg.append(title);
   return svg;
 }
@@ -385,12 +430,11 @@ function ringsEl(a) {
 // Session and weekly use as two small boxes, matching the tray icons:
 // outlined for the session, solid for the week, colored by how much is used.
 function chipsEl(a) {
-  const session = a.metrics.find((m) => m.id === 'five_hour') || a.metrics[0];
-  const weekly = a.metrics.find((m) => m.id === 'seven_day') || a.metrics[1];
+  const { session, weekly } = mainLimits(a);
   // "5h" and "7d" read the same in every language ("S" would be both Sesión and Semanal).
   const chip = (m, solid, tag) => m && h('span', {
     class: `chip ${solid ? 'solid' : ''} ${level(m.pct)}`,
-    title: `${t(`metric.${m.id}`)}: ${m.pct}%`,
+    title: `${metricName(m)}: ${m.pct}%`,
   }, h('small', {}, tag), String(m.pct));
   return h('span', { class: 'chips' }, chip(session, false, '5h'), chip(weekly, true, '7d'));
 }
@@ -452,12 +496,17 @@ function cardEl(a) {
   } else if (!a.metrics.length) {
     body = h('div', { class: 'tile wide note' }, t('noLimits'));
   } else {
-    const odd = a.metrics.length % 2 === 1;
+    // An account without a session limit says so where it would be.
+    const free = noSessionLimit(a);
+    const count = a.metrics.length + (free ? 1 : 0);
+    const odd = count % 2 === 1;
     body = [
       // The last figures stay on show when a refresh fails, and say that they are old.
       a.error && h('div', { class: 'tile wide note error' }, t('stale', { at: a.fetchedAt ? clock(a.fetchedAt) : '–' })),
+      free && freeSessionEl(),
       a.metrics.map((m, i) => metricEl(m, a, odd && i === a.metrics.length - 1)),
       sparkEl(a),
+      breakdownEl(a),
     ];
   }
   const chats = sessionsFor === a.key;
@@ -1594,7 +1643,7 @@ function trayIcon(pct, accountColor, solid) {
 
 // What a tray icon says on hover: the metric and, on a second line, when it resets.
 function trayTip(account, metric) {
-  const lines = [`${account.label} — ${t(`metric.${metric.id}`)}: ${metric.pct}%`];
+  const lines = [`${account.label} — ${metricName(metric)}: ${metric.pct}%`];
   if (metric.resetsAt) {
     const reset = `${untilReset(metric.resetsAt)} · ${clock(metric.resetsAt)}`;
     lines.push(reset[0].toUpperCase() + reset.slice(1));
@@ -1605,8 +1654,9 @@ function trayTip(account, metric) {
 function drawTray() {
   const active = state.accounts.find((a) => a.key === state.activeKey && a.status === 'ok' && a.metrics.length);
   const color = active ? active.color : '#a3a3a3';
-  const pick = (id, fallback) => active && (active.metrics.find((m) => m.id === id) || active.metrics[fallback]);
-  const slots = [['session', pick('five_hour', 0), false], ['weekly', pick('seven_day', 1), true]];
+  const { session, weekly } = active ? mainLimits(active) : {};
+  // An account with no session limit has a single icon, for its week.
+  const slots = [!(active && noSessionLimit(active)) && ['session', session, false], ['weekly', weekly, true]].filter(Boolean);
   api.trayImages(slots.map(([key, metric, solid]) => ({
     key,
     dataUrl: trayIcon(metric ? metric.pct : null, color, solid),

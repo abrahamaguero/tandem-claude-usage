@@ -6,7 +6,17 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- Tandem follows the new way claude.ai reports limits. An account with no 5-hour limit (a verified Ultra
+  one) shows "no limit" where the session was, a dotted ring and a single icon by the clock, instead of
+  the weekly figure twice.
+
+### Added
+
+- Limits of the week for one model, such as Fable's, with how much of the week it may take.
+- Where the week went: the share of Claude Code, chats and Cowork, when claude.ai reports it.
+- Extra usage that is turned off says so.
 
 ## [0.6.2] - 2026-10-18
 

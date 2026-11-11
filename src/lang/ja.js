@@ -5,6 +5,7 @@ const LANG_JA = {
   'metric.seven_day_opus': '週間 · Opus',
   'metric.seven_day_sonnet': '週間 · Sonnet',
   'metric.seven_day_oauth_apps': '週間 · アプリ',
+  'metric.seven_day_cowork': '週間 · Cowork',
   'metric.extra_usage': '追加使用量',
   errUnexpected: '予期しない応答（{status}）',
   errNoUsage: '使用量データなし（{status}）',
@@ -319,6 +320,13 @@ const LANG_JA = {
   alertTestTip: 'テスト通知を表示',
   loginNoteTitle: 'アカウントごとに一度だけ。数週間有効です。',
   loginNoteText: 'ここにパスワードが保存されていませんか？ Google か Apple、またはメールアドレスと claude.ai から届くコードでログインできます。ブラウザのログイン状態は各ブラウザだけのものなので、Tandem からは使えません。',
+  noSessionLimit: 'このアカウントには 5 時間の上限がありません',
+  scopedShare: '週の最大 {allowance}% まで使用可能 · 現在 {used}%',
+  breakdownTitle: '今週の使い道',
+  breakdownTip: '今週の使用量の製品別の内訳（claude.ai の集計）',
+  'surface.chat': 'チャット',
+  'surface.other': 'その他',
+  extraOff: 'オフ：claude.ai でオンにすると上限を超えても使えます',
   footer: '非公式ツール — Anthropic とは提携していません。',
 };
 
