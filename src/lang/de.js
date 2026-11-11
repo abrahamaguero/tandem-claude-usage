@@ -317,6 +317,7 @@ const LANG_DE = {
   feedback: 'Feedback senden',
   feedbackTip: 'Öffnet Tandems Seite auf GitHub in deinem Browser',
   optOwnAlerts: 'Hinweise über der Taskleiste anzeigen',
+  optOwnAlertsMac: 'Hinweise unter der Menüleiste anzeigen',
   optOwnAlertsTip: 'Aus: Tandem nutzt die Benachrichtigungen von Windows',
   alertTest: 'Hier meldet sich Tandem bei dir.',
   alertTestTip: 'Beispielhinweis anzeigen',

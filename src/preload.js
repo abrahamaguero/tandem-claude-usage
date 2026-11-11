@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 // What the page may ask of the app. The ones that listen return nothing: the page gets
 // no handle on the channel itself.
 contextBridge.exposeInMainWorld('api', {
+  platform: process.platform,
   onState: (cb) => { ipcRenderer.on('state', (_e, state) => cb(state)); },
   ready: () => ipcRenderer.send('ready'),
   generatePrompts: (ids) => ipcRenderer.invoke('generate-prompts', ids),

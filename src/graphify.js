@@ -29,6 +29,9 @@ function executable() {
       for (const version of fs.readdirSync(python)) dirs.push(path.join(python, version, 'Scripts'));
     } catch {}
   }
+  // An app opened from the Finder on macOS does not get the PATH of the terminal: the
+  // folders Homebrew installs into are looked in by name.
+  if (!WINDOWS) dirs.push('/opt/homebrew/bin', '/usr/local/bin');
   for (const dir of (process.env.PATH || '').split(path.delimiter)) {
     if (path.isAbsolute(dir)) dirs.push(dir);
   }

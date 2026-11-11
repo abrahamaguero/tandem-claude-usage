@@ -317,6 +317,7 @@ const LANG_JA = {
   feedback: 'フィードバックを送る',
   feedbackTip: 'ブラウザで Tandem の GitHub ページを開きます',
   optOwnAlerts: 'タスクバーの上に通知を表示',
+  optOwnAlertsMac: 'メニューバーの下に通知を表示',
   optOwnAlertsTip: 'オフにすると Windows の通知を使います',
   alertTest: 'Tandem からの通知はここに表示されます。',
   alertTestTip: 'テスト通知を表示',

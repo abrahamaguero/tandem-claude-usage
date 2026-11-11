@@ -1,0 +1,63 @@
+# Builds the macOS installer (a .dmg for Apple Silicon and Intel) on a Mac, since it cannot
+# be made on Windows. Publishing a release attaches it to that release, next to the
+# Windows one. Run by hand, it builds whatever is asked and keeps the .dmg as an artifact
+# of the run, attaching it to a release only when told to.
+name: macOS installer
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or tag to build
+        required: true
+        default: main
+      release:
+        description: Tag of the release to attach the .dmg to (empty to keep it as an artifact only)
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  dmg:
+    runs-on: macos-latest
+    env:
+      REF: ${{ github.event.release.tag_name || inputs.ref }}
+      RELEASE: ${{ github.event.release.tag_name || inputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tests that do not depend on the system
+        run: |
+          node tools/limits-test.js
+          node tools/i18n-test.js
+
+      - name: Build the .dmg
+        run: npx electron-builder --mac dmg --universal --publish never
+        env:
+          # Not signed with an Apple certificate: no looking for one in the keychain.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tandem-mac
+          path: dist/*.dmg
+          if-no-files-found: error
+
+      - name: Attach it to the release
+        if: env.RELEASE != ''
+        run: gh release upload "$RELEASE" dist/*.dmg --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}

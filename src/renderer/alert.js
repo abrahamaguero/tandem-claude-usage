@@ -97,11 +97,13 @@ alertApi.onSay(({ title, body, kind, level, meters, theme, language, ms }) => {
 // `tail` is how far from the left edge the icons are, when the alert stands right above
 // them; without it there is no pointer.
 alertApi.onPlace((where) => {
+  // Under icons above it (the menu bar of macOS) the pointer is on top and it comes down.
+  document.body.classList.toggle('up', Boolean(where.up));
   tail.hidden = where.tail == null;
   if (where.tail != null) tail.style.left = `${where.tail}px`;
   gone = false;
   box.style.opacity = '';
-  if (!calm.matches) box.animate([{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'translateY(0)' }], ENTER);
+  if (!calm.matches) box.animate([{ opacity: 0, transform: `translateY(${where.up ? -16 : 16}px)` }, { opacity: 1, transform: 'translateY(0)' }], ENTER);
   run();
 });
 

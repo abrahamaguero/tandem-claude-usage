@@ -135,6 +135,10 @@ const chime = new Audio();
 
 // The tallest a view may get before it scrolls: the screen, minus the header and a margin.
 // Worked out again when the window changes, which it does on moving to another screen.
+// On macOS the panel hangs from the menu bar and its window is as tall as it is.
+const MAC = api.platform === 'darwin';
+if (MAC) document.documentElement.dataset.os = 'mac';
+
 const setMaxHeight = () => document.documentElement.style.setProperty('--max-h', `${screen.availHeight - 80}px`);
 setMaxHeight();
 window.addEventListener('resize', setMaxHeight);
@@ -1003,7 +1007,7 @@ function renderSettings() {
       toggleRow('autoSwitch', t('optAutoSwitch')),
       toggleRow('compact', t('optCompact')),
       toggleRow('alwaysOnTop', t('optOnTop')),
-      toggleRow('hideFromTaskbar', t('optTaskbar')),
+      !MAC && toggleRow('hideFromTaskbar', t('optTaskbar')),
       toggleRow('launchAtStartup', t('optStartup')),
       h('div', { class: 'row' }, h('label', {}, t('optRefresh')), picker(refresh)),
       h('div', { class: 'row' }, h('label', {}, t('optLanguage')), picker(language)),
@@ -1023,7 +1027,7 @@ function renderSettings() {
     group(t('alerts'),
       toggleRow('alerts', t('optAlerts')),
       h('div', { class: 'row' },
-        h('label', { title: t('optOwnAlertsTip') }, t('optOwnAlerts')),
+        h('label', { title: t('optOwnAlertsTip') }, t(MAC ? 'optOwnAlertsMac' : 'optOwnAlerts')),
         h('button', { class: 'ghost', title: t('alertTestTip'), onclick: (e) => { e.target.blur(); api.testAlert(); } }, '▶'),
         h('input', { type: 'checkbox', checked: !!state.settings.ownAlerts, title: t('optOwnAlertsTip'), onchange: (e) => api.setSetting('ownAlerts', e.target.checked) })),
       h('div', { class: 'row' },
@@ -1771,6 +1775,8 @@ function fit() {
   if (to === fitted) return;
   const from = Math.round(shownHeight());
   fitted = to;
+  // On macOS the window is the panel: it is resized, and macOS animates that itself.
+  if (MAC) return api.resize(to);
   const rest = () => {
     if (fitting) fitting.cancel();
     fitting = null;
@@ -1847,7 +1853,8 @@ function enter() {
     if (glassOn()) api.glass(fitted);
     return;
   }
-  const rise = frame.animate([{ opacity: 0, transform: `translateY(${RISE}px)` }, { opacity: 1, transform: 'translateY(0)' }], ENTER);
+  // On macOS it comes down from the menu bar instead.
+  const rise = frame.animate([{ opacity: 0, transform: `translateY(${MAC ? -RISE : RISE}px)` }, { opacity: 1, transform: 'translateY(0)' }], ENTER);
   entering = rise;
   const settle = () => {
     if (entering !== rise) return;

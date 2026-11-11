@@ -317,6 +317,7 @@ const LANG_PT_BR = {
   feedback: 'Enviar feedback',
   feedbackTip: 'Abre a página do Tandem no GitHub, no seu navegador',
   optOwnAlerts: 'Mostrar os avisos acima da barra de tarefas',
+  optOwnAlertsMac: 'Mostrar os avisos abaixo da barra de menus',
   optOwnAlertsTip: 'Desativado: o Tandem usa as notificações do Windows',
   alertTest: 'É aqui que o Tandem vai avisar você.',
   alertTestTip: 'Ver um aviso de teste',

@@ -15,6 +15,9 @@ const BASE = 'https://claude.ai';
 // Claude Code (CLI) records the account it is signed in to here.
 const CLAUDE_JSON = path.join(os.homedir(), '.claude.json');
 const WIDTH = 460;
+// On macOS the menu bar is at the top: the panel hangs from it instead of standing on the
+// taskbar, and a few things work otherwise (see where MAC is asked).
+const MAC = process.platform === 'darwin';
 const COLORS = ['#e91e8c', '#00a0b0', '#d4ff00', '#ffffff'];
 const DEFAULT_SETTINGS = {
   autoSwitch: true,
@@ -330,6 +333,7 @@ function nextAlert() {
       },
     });
     alertWin.setAlwaysOnTop(true, 'pop-up-menu');
+    if (MAC) alertWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     const page = alertWin.webContents;
     page.on('will-navigate', (e, url) => { if (url !== page.getURL()) e.preventDefault(); });
     page.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -368,18 +372,20 @@ function alertPlace(height) {
   const within = (value, low, high) => Math.round(Math.max(low, Math.min(value, high)));
   const x = within(cx - ALERT_WIDTH / 2, area.x + ALERT_GAP, area.x + area.width - ALERT_WIDTH - ALERT_GAP);
   const y = within(cy - height / 2, area.y + ALERT_GAP, area.y + area.height - height - ALERT_GAP);
-  // The pointer is drawn under the alert, so only a taskbar below it gets one.
+  // The pointer goes under the alert for a taskbar below it, and over it for icons above
+  // it (the menu bar of macOS, or a taskbar on top); none for one at a side.
   const below = cy >= area.y + area.height;
-  return { x, y, tail: below ? within(cx - x, 28, ALERT_WIDTH - 28) : null };
+  const above = cy < area.y;
+  return { x, y, tail: below || above ? within(cx - x, 28, ALERT_WIDTH - 28) : null, up: above };
 }
 
 // The alert's page has laid out its words: it is put in place and shown.
 function showAlert(height) {
   if (!alertNow || !alertWin || alertWin.isDestroyed() || !Number.isFinite(height)) return;
   const tall = Math.max(40, Math.min(Math.round(height), 400));
-  const { x, y, tail } = alertPlace(tall);
+  const { x, y, tail, up } = alertPlace(tall);
   alertWin.setBounds({ x, y, width: ALERT_WIDTH, height: tall });
-  alertWin.webContents.send('place', { tail });
+  alertWin.webContents.send('place', { tail, up });
   alertWin.showInactive();
 }
 
@@ -393,13 +399,26 @@ function endAlert(clicked) {
 }
 
 function showWindow() {
-  if (alive()) win.show();
+  if (!alive()) return;
+  placeUnderTray();
+  win.show();
+}
+
+// On macOS the panel opens right under Tandem's icons in the menu bar.
+function placeUnderTray() {
+  if (!MAC || !alive()) return;
+  const icons = [...trays.values()].map((tray) => tray.getBounds()).filter((b) => b.width > 0);
+  if (!icons.length) return;
+  const cx = (Math.min(...icons.map((b) => b.x)) + Math.max(...icons.map((b) => b.x + b.width))) / 2;
+  const area = screen.getDisplayNearestPoint({ x: Math.round(cx), y: Math.round(icons[0].y) }).workArea;
+  const x = Math.round(Math.max(area.x + 6, Math.min(cx - WIDTH / 2, area.x + area.width - WIDTH - 6)));
+  win.setPosition(x, area.y + 6);
 }
 
 // Shows the window with the chats of the account in use open.
 function pickSession() {
   if (!alive()) return;
-  win.show();
+  showWindow();
   win.webContents.send('pick-session');
 }
 
@@ -1036,27 +1055,13 @@ function pushState() {
 // ---------- windows ----------
 
 function createWindow() {
-  const saved = config.bounds;
-  // The window keeps its right edge when its width changes between versions: saved bounds
-  // carry the width they were taken at (360 before it was stored).
-  const right = saved ? saved.x + (saved.w || 360) : null;
-  const area = saved ? screen.getDisplayNearestPoint({ x: right, y: saved.y }).workArea : screen.getPrimaryDisplay().workArea;
-  const left = saved ? Math.max(area.x, Math.min(right, area.x + area.width) - WIDTH) : area.x + area.width - WIDTH - 16;
-  // The window itself never changes size: it is see-through and as tall as the screen
-  // allows, and the panel grows and shrinks inside it, standing on its bottom edge. Moving
-  // a real window pixel by pixel stutters; a panel sliding inside a still one does not.
-  const tall = area.height - 16;
-  // Saved bounds store the bottom edge, which is where the panel stands. It is kept on
-  // the screen: the one it was saved on may be gone, or be smaller now.
-  const bottom = Math.max(area.y + 200, Math.min(saved ? saved.y : area.y + area.height - 16, area.y + area.height));
   win = new BrowserWindow({
-    width: WIDTH,
-    height: tall,
-    x: left,
-    y: bottom - tall,
+    ...(MAC ? macBounds() : windowsBounds()),
     frame: false,
     transparent: true,
     thickFrame: false,
+    // macOS draws a shadow from the see-through window's shape, which lags as it resizes.
+    hasShadow: !MAC,
     resizable: false,
     maximizable: false,
     fullscreenable: false,
@@ -1071,7 +1076,41 @@ function createWindow() {
       backgroundThrottling: false,
     },
   });
-  setPanel(1);
+  if (MAC) {
+    // Shown on whichever desktop is in front, as a menu bar app is, even over a full-screen one.
+    win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  } else {
+    setPanel(1);
+  }
+  windowEvents();
+}
+
+// On macOS the window is as tall as the panel and hangs from the menu bar, under Tandem's
+// icons: macOS cannot let clicks through the see-through part of a window, so there must
+// be none. setPanel() resizes it with the panel.
+function macBounds() {
+  const area = screen.getPrimaryDisplay().workArea;
+  return { width: WIDTH, height: 200, x: area.x + area.width - WIDTH - 8, y: area.y + 6 };
+}
+
+function windowsBounds() {
+  const saved = config.bounds;
+  // The window keeps its right edge when its width changes between versions: saved bounds
+  // carry the width they were taken at (360 before it was stored).
+  const right = saved ? saved.x + (saved.w || 360) : null;
+  const area = saved ? screen.getDisplayNearestPoint({ x: right, y: saved.y }).workArea : screen.getPrimaryDisplay().workArea;
+  const left = saved ? Math.max(area.x, Math.min(right, area.x + area.width) - WIDTH) : area.x + area.width - WIDTH - 16;
+  // The window itself never changes size: it is see-through and as tall as the screen
+  // allows, and the panel grows and shrinks inside it, standing on its bottom edge. Moving
+  // a real window pixel by pixel stutters; a panel sliding inside a still one does not.
+  const tall = area.height - 16;
+  // Saved bounds store the bottom edge, which is where the panel stands. It is kept on
+  // the screen: the one it was saved on may be gone, or be smaller now.
+  const bottom = Math.max(area.y + 200, Math.min(saved ? saved.y : area.y + area.height - 16, area.y + area.height));
+  return { width: WIDTH, height: tall, x: left, y: bottom - tall };
+}
+
+function windowEvents() {
   // The window shows its own page and nothing else: a link or a file dropped on it must
   // not replace it, since whatever loaded there would get the app's own bridge.
   const page = win.webContents;
@@ -1083,7 +1122,7 @@ function createWindow() {
   // Windows can put the window back on the taskbar when it is shown again. The tray menu
   // says "show" or "hide" after what the window is doing.
   win.on('show', () => {
-    win.setSkipTaskbar(config.settings.hideFromTaskbar);
+    if (!MAC) win.setSkipTaskbar(config.settings.hideFromTaskbar);
     updateTray(buildState());
     // The page brings the panel in, and tells the glass when to come in behind it.
     page.send('enter');
@@ -1101,6 +1140,8 @@ function createWindow() {
   win.on('move', () => placeGlass(panelHeight));
   win.on('moved', () => {
     refit();
+    // On macOS it opens under the icons every time: where it was moved to is not kept.
+    if (MAC) return;
     const b = win.getBounds();
     config.bounds = { x: b.x, y: b.y + b.height, w: b.width };
     saveConfig();
@@ -1113,6 +1154,14 @@ function createWindow() {
 function refit() {
   if (!alive()) return;
   const b = win.getBounds();
+  if (MAC) {
+    // Kept on its screen, below the menu bar; its height is the panel's.
+    const area = screen.getDisplayMatching(b).workArea;
+    const x = Math.max(area.x, Math.min(b.x, area.x + area.width - WIDTH));
+    const y = Math.max(area.y + 6, Math.min(b.y, area.y + area.height - 120));
+    if (x !== b.x || y !== b.y) win.setPosition(x, y);
+    return;
+  }
   const area = screen.getDisplayMatching(b).workArea;
   const tall = area.height - 16;
   const bottom = Math.max(area.y + 200, Math.min(b.y + b.height, area.y + area.height));
@@ -1129,6 +1178,13 @@ function setPanel(height) {
   if (!alive() || !Number.isFinite(height)) return;
   panelHeight = height;
   const b = win.getBounds();
+  if (MAC) {
+    // The window is the panel: it grows and shrinks with it, which macOS animates itself.
+    const area = screen.getDisplayMatching(b).workArea;
+    const h = Math.max(40, Math.min(Math.round(height), area.y + area.height - b.y - 6));
+    if (h !== b.height) win.setBounds({ x: b.x, y: b.y, width: WIDTH, height: h }, true);
+    return;
+  }
   const h = Math.max(1, Math.min(Math.round(height), b.height));
   win.setShape([{ x: 0, y: b.height - h, width: b.width, height: h }]);
 }
@@ -1219,7 +1275,7 @@ function hidePanel() {
 function toggleWindow() {
   if (!alive()) return;
   if (win.isVisible()) hidePanel();
-  else win.show();
+  else showWindow();
 }
 
 // The sign-in to claude.ai for one account, in a window of its own: the account's session
@@ -1244,6 +1300,7 @@ function openLogin(profile) {
   loginWin.contentView.addChildView(view);
   const page = view.webContents;
   loginWindows.set(profile.id, loginWin);
+  if (MAC) app.focus({ steal: true });
 
   // The line is as tall as its words, which depends on the language; the page has the rest.
   let noteHeight = 72;
@@ -1317,6 +1374,8 @@ function openLogin(profile) {
 
 // ---------- tray ----------
 
+let trayMenu = null; // the icons' menu, which macOS opens by hand on a right click
+
 function updateTray(state) {
   if (!trays.size || quitting) return;
   for (const [key, tray] of trays) tray.setToolTip((trayTips.get(key) || 'Tandem - Claude Usage').slice(0, 127));
@@ -1345,7 +1404,18 @@ function updateTray(state) {
     { type: 'separator' },
     { label: t('quit'), click: () => app.quit() },
   ]);
-  for (const tray of trays.values()) tray.setContextMenu(menu);
+  trayMenu = menu;
+  if (!MAC) for (const tray of trays.values()) tray.setContextMenu(menu);
+}
+
+// A picture the page drew, as a tray icon. The menu bar of macOS is 22 points tall: there
+// the 64-pixel picture is shown at 18, drawn twice as fine for Retina screens.
+function trayImage(dataUrl) {
+  const image = nativeImage.createFromDataURL(dataUrl);
+  if (!MAC) return image;
+  const small = nativeImage.createEmpty();
+  small.addRepresentation({ scaleFactor: 2, buffer: image.resize({ width: 36, height: 36, quality: 'best' }).toPNG() });
+  return small;
 }
 
 // ---------- actions ----------
@@ -1451,13 +1521,15 @@ function registerIpc() {
     // last-to-first to end up with the session on the left and the week on the right.
     for (const { key, dataUrl, tip } of [...images].reverse()) {
       trayTips.set(key, String(tip || ''));
-      const image = nativeImage.createFromDataURL(dataUrl);
+      const image = trayImage(dataUrl);
       if (trays.has(key)) {
         trays.get(key).setImage(image);
         continue;
       }
       const tray = new Tray(image);
       tray.on('click', toggleWindow);
+      // On macOS a menu set on an icon opens on the plain click, which here shows the panel.
+      if (MAC) tray.on('right-click', () => { if (trayMenu) tray.popUpContextMenu(trayMenu); });
       trays.set(key, tray);
     }
     updateTray(buildState());
@@ -1536,11 +1608,13 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.whenReady().then(async () => {
     // No menu: its shortcuts would reload the page, zoom it or open the developer tools.
-    Menu.setApplicationMenu(null);
+    // macOS needs one for copy and paste to work in a text field (the sign-in among them),
+    // so there it has those and the app's own, and nothing else.
+    Menu.setApplicationMenu(MAC ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }]) : null);
     lockDown(session.defaultSession);
     loadConfig();
     // Keep the Windows startup entry pointing at this copy of the app.
-    if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: config.settings.launchAtStartup, path: process.execPath, args: [] });
+    if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: config.settings.launchAtStartup, ...(MAC ? {} : { path: process.execPath, args: [] }) });
     history = createHistory(path.join(app.getPath('userData'), 'history.json'));
     registerIpc();
     createWindow();
