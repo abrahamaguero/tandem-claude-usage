@@ -259,7 +259,7 @@ main.arrive > :not(.account):not(.habits):not(.ghosts), main.arrive > .account.c
 .closed .name { font-size: 17px; letter-spacing: -0.3px; }
 .closed .org { color: var(--muted); opacity: 1; }
 /* The plan of the account, before its organization. */
-.plan { display: inline-block; margin-right: 7px; padding: 0 7px; border: 1.5px solid currentColor; border-radius: 999px; font: 800 9.5px/1.55 var(--display); letter-spacing: 0.5px; text-transform: uppercase; vertical-align: 1px; }
+.plan { display: inline-block; margin: 4px 7px 1px 0; padding: 0 7px; border: 1.5px solid currentColor; border-radius: 999px; font: 800 9.5px/1.55 var(--display); letter-spacing: 0.5px; text-transform: uppercase; vertical-align: 1px; }
 .closed .now { background: var(--c); color: var(--ink); }
 .closed .swatches { flex-basis: 100%; }
 
