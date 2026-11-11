@@ -6,6 +6,10 @@ touch-ups are left out unless they change how something is used. The format foll
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.7.1] - 2026-11-11
+
 ### Added
 
 - The plan of each account (Pro, Max, Ultra, Team…) next to its name.
@@ -78,7 +82,8 @@ touch-ups are left out unless they change how something is used. The format foll
 
 First public release.
 
-[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/abrahamaguero/tandem-claude-usage/compare/v0.6.0...v0.6.1
